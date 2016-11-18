@@ -55,7 +55,7 @@ void check2()
 		auto const_view = const_vec.view();
 		printf("");
 	}
-	{
+	{  
 		host_multi_dim_vector<int, 3> host_vec(3, 4, 5);
 		auto host_view = host_vec.view();
 		for(size_t x=0; x<3; ++x)
