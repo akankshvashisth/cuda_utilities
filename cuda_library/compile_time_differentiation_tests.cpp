@@ -420,7 +420,7 @@ int compile_time_differentiation_tests()
 	auto dm2 = derivative(dm);
 	auto dm3 = derivative(dm2);
 	auto dm4 = derivative(dm3);
-	// auto dm5 = derivative(dm4);
+	//auto dm5 = derivative(dm4);
 
 	std::cout << demangle(typeid(m).name()) << std::endl;
 	std::cout << demangle(typeid(dm).name()) << std::endl;
@@ -455,33 +455,33 @@ int compile_time_differentiation_tests()
 		<< dp2(0.5) << " "
 		<< dp3(0.5) << std::endl;
 
-	//auto a0 = sin(x);
-	//auto a1 = differentiate(a0, x);
-	//auto a2 = differentiate(a1, x);
-	//auto a3 = differentiate(a2, x);
-	//auto a4 = differentiate(a3, x);
-	//auto a5 = differentiate(a4, x);
-	//auto a6 = differentiate(a5, x);
-	//auto a7 = differentiate(a6, x);
-	//auto a8 = differentiate(a7, x);
-	//auto a9 = differentiate(a8, x);
-	//auto a10 = differentiate(a9, x);
-	//auto a11 = differentiate(a10, x);
-	////auto a12 = derivative(a11);
-	//
-	//std::cout << demangle(typeid(a0).name()) << std::endl;
-	//std::cout << demangle(typeid(a1).name()) << std::endl;
-	//std::cout << demangle(typeid(a2).name()) << std::endl;
-	//std::cout << demangle(typeid(a3).name()) << std::endl;
-	//std::cout << demangle(typeid(a4).name()) << std::endl;
-	//std::cout << demangle(typeid(a5).name()) << std::endl;
-	//std::cout << demangle(typeid(a6).name()) << std::endl;
-	//std::cout << demangle(typeid(a7).name()) << std::endl;
-	//std::cout << demangle(typeid(a8).name()) << std::endl;
-	//std::cout << demangle(typeid(a9).name()) << std::endl;
-	//std::cout << demangle(typeid(a10).name()) << std::endl;
-	//std::cout << demangle(typeid(a11).name()) << std::endl;
-	////std::cout << demangle(typeid(a12).name()) << std::endl;
+	auto a0 = sin(x);
+	auto a1 = differentiate(a0, x);
+	auto a2 = differentiate(a1, x);
+	auto a3 = differentiate(a2, x);
+	auto a4 = differentiate(a3, x);
+	auto a5 = differentiate(a4, x);
+	auto a6 = differentiate(a5, x);
+	auto a7 = differentiate(a6, x);
+	auto a8 = differentiate(a7, x);
+	auto a9 = differentiate(a8, x);
+	auto a10 = differentiate(a9, x);
+	auto a11 = differentiate(a10, x);
+	//auto a12 = derivative(a11);
+	
+	std::cout << demangle(typeid(a0).name()) << std::endl;
+	std::cout << demangle(typeid(a1).name()) << std::endl;
+	std::cout << demangle(typeid(a2).name()) << std::endl;
+	std::cout << demangle(typeid(a3).name()) << std::endl;
+	std::cout << demangle(typeid(a4).name()) << std::endl;
+	std::cout << demangle(typeid(a5).name()) << std::endl;
+	std::cout << demangle(typeid(a6).name()) << std::endl;
+	std::cout << demangle(typeid(a7).name()) << std::endl;
+	std::cout << demangle(typeid(a8).name()) << std::endl;
+	std::cout << demangle(typeid(a9).name()) << std::endl;
+	std::cout << demangle(typeid(a10).name()) << std::endl;
+	std::cout << demangle(typeid(a11).name()) << std::endl;
+	//std::cout << demangle(typeid(a12).name()) << std::endl;
 
 	auto b0 = sqrt(x*y);
 	auto b1 = differentiate(b0, y);
