@@ -1,5 +1,3 @@
-// http://goo.gl/NUpsOt
-
 #include <cassert>
 #include <iostream>
 #include <string>
@@ -7,6 +5,7 @@
 #include <cstdio>
 #include <type_traits>
 #include <typeinfo>
+#include <algorithm>
 
 #include <cstdlib>
 #include <memory>
@@ -280,55 +279,55 @@ int compile_time_differentiation_tests()
 	std::cout << atan2(x, y)(1.0, 2.0) << std::endl;
 
 
-	//std::cout << ( (sin(x)^2) + (cos(x)^2) )(0.23) << std::endl;
-	//std::cout << ( (sin(x)^2) + (cos(x)^2) )(0.53) << std::endl;
-	//std::cout << ( (sin(x)^2) + (cos(x)^2) )(3.14159265) << std::endl;
+	std::cout << ( (sin(x)^2) + (cos(x)^2) )(0.23) << std::endl;
+	std::cout << ( (sin(x)^2) + (cos(x)^2) )(0.53) << std::endl;
+	std::cout << ( (sin(x)^2) + (cos(x)^2) )(3.14159265) << std::endl;
 
 	/////////////////////////////
-	//std::cout << ( sin(x)/cos(x) )(0.23) << " " << (tan(x))(0.23) << std::endl;
-	//
-	//std::cout << sin(2*x)(0.23)  << " " << (2*sin(x)*cos(x))(0.23) << std::endl;
-	//
-	//std::cout << sin(-x)(0.23)  << " " << (-sin(x))(0.23) << std::endl;
-	//
-	//std::cout << (exp(sin(x)^cos(y)*z)/w)(0.25, 0.50, 0.33, 0.75) << std::endl;
-	//
-	//std::cout << demangle(typeid((2*(x^y)+sqrt(w*z*x)*4.5/tan(x/y)*exp(sin(x)^cos(y)*z)/w)).name()) << std::endl;
-	//
-	//std::cout << get_dim(exp(sin(x)^cos(y)*z)) << std::endl;
-	//
-	//auto eq = (x*x-3.14159265);
-	//auto guess = 1.2;
+	std::cout << ( sin(x)/cos(x) )(0.23) << " " << (tan(x))(0.23) << std::endl;
+	
+	std::cout << sin(2*x)(0.23)  << " " << (2*sin(x)*cos(x))(0.23) << std::endl;
+	
+	std::cout << sin(-x)(0.23)  << " " << (-sin(x))(0.23) << std::endl;
+	
+	std::cout << (exp(sin(x)^cos(y)*z)/w)(0.25, 0.50, 0.33, 0.75) << std::endl;
+	
+	std::cout << demangle(typeid((2*(x^y)+sqrt(w*z*x)*4.5/tan(x/y)*exp(sin(x)^cos(y)*z)/w)).name()) << std::endl;
+	
+	std::cout << get_dim(exp(sin(x)^cos(y)*z)) << std::endl;
+	
+	auto eq = (x*x-3.14159265);
+	auto guess = 1.2;
 	//auto root = newton_raphson( eq , guess );
 	//std::cout << root << " " << eq(root) << std::endl;
-	//
-	//std::cout << depends_on(x*x, x) << std::endl;
-	//std::cout << depends_on(x*x, y) << std::endl;
-	//std::cout << depends_on(x*y, y) << std::endl;
-	//std::cout << depends_on((2*x)^w+sqrt(w*x)*4.5/tan(x/w)*exp(sin(x)^cos(w)*z)/w, x) << std::endl;
-	//std::cout << depends_on((2*x)^w+sqrt(w*x)*4.5/tan(x/w)*exp(sin(x)^cos(w)*z)/w, y) << std::endl;
-	//std::cout << depends_on((2*x)^w+sqrt(w*x)*4.5/tan(x/w)*exp(sin(x)^cos(w)*z)/w, z) << std::endl;
-	//std::cout << depends_on((2*x)^w+sqrt(w*x)*4.5/tan(x/w)*exp(sin(x)^cos(w)*z)/w, w) << std::endl;
-	//auto dd = differentiate(x*y*y,y);
-	//std::cout << dd(2, 3) << std::endl;
-	//std::cout << demangle(typeid(dd).name()) << std::endl;
-	//
-	//auto dd2 = differentiate(sin(y*x), x);
-	//std::cout << dd2(0.25, 0.63) << std::endl;
-	//
-	//std::cout << Max<3,2,4,2,5,3,6,3,2,4,2,2>::value << std::endl;
-	//
-	//
-	//std::vector<std::vector<double>> res(get_number_of_function(j), std::vector<double>(get_number_of_variables(j), 0.0));
-	//
-	//value_jacobian_at(j, res, 1.5, 3.3, 2.7, 3.4);
-	//
-	//std::for_each(res.cbegin(), res.cend(), []( std::vector<double> const& v ){
-	//    std::for_each(v.cbegin(), v.cend(), []( double const& d ){
-	//        std::cout << d << "\t";
-	//    });
-	//    std::cout << std::endl;
-	//});
+	
+	std::cout << depends_on(x*x, x) << std::endl;
+	std::cout << depends_on(x*x, y) << std::endl;
+	std::cout << depends_on(x*y, y) << std::endl;
+	std::cout << depends_on((2*x)^w+sqrt(w*x)*4.5/tan(x/w)*exp(sin(x)^cos(w)*z)/w, x) << std::endl;
+	std::cout << depends_on((2*x)^w+sqrt(w*x)*4.5/tan(x/w)*exp(sin(x)^cos(w)*z)/w, y) << std::endl;
+	std::cout << depends_on((2*x)^w+sqrt(w*x)*4.5/tan(x/w)*exp(sin(x)^cos(w)*z)/w, z) << std::endl;
+	std::cout << depends_on((2*x)^w+sqrt(w*x)*4.5/tan(x/w)*exp(sin(x)^cos(w)*z)/w, w) << std::endl;
+	auto dd = differentiate(x*y*y,y);
+	std::cout << dd(2, 3) << std::endl;
+	std::cout << demangle(typeid(dd).name()) << std::endl;
+	
+	auto dd2 = differentiate(sin(y*x), x);
+	std::cout << dd2(0.25, 0.63) << std::endl;
+	
+	std::cout << Max<3,2,4,2,5,3,6,3,2,4,2,2>::value << std::endl;
+	{
+		auto j = jacobian(x*w, y*z, y*y, z*z, x*x, y*x*z + x*w);
+		std::vector<std::vector<double>> res(get_number_of_function(j), std::vector<double>(get_number_of_variables(j), 0.0));
+		value_jacobian_at(j, res, 1.5, 3.3, 2.7, 3.4);
+
+		std::for_each(res.cbegin(), res.cend(), [](std::vector<double> const& v) {
+			std::for_each(v.cbegin(), v.cend(), [](double const& d) {
+				std::cout << d << "\t";
+			});
+			std::cout << std::endl;
+		});
+	}
 	/////////////////////////////
 
 	auto ds = (x*y*z);
