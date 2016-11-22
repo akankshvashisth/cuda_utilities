@@ -62,7 +62,7 @@ void check2()
 			for (size_t y = 0; y<4; ++y)
 				for (size_t z = 0; z < 5; ++z)
 				{
-					host_view(x, y, z) = x + y + z;
+					host_view(x, y, z) = x*4*5 + y*5 + z;
 				}
 
 		cuda_multi_dim_vector<int, 3> vec(host_vec.view().data(), 3, 4, 5);

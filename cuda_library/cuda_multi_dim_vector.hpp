@@ -14,130 +14,113 @@ struct multi_dim_vector;
 
 namespace multi_dim_vector_detail
 {
-    template<size_t _X>
-    struct max_dim
-    {
-        enum{ dimension = _X };
-        template<typename T, size_t N>
-        AKS_FUNCTION_PREFIX_ATTR static size_t apply(multi_dim_vector<T, N> const& v) { return max_dim<dimension - 1>::apply(v.m_data); }
-    };
+	AKS_FUNCTION_PREFIX_ATTR size_t multiply(size_t const * begin, size_t const* end)
+	{
+		size_t ret = 1;
+		for (auto it = begin; it != end; ++it)
+		{
+			ret *= *it;
+		}
+		return ret;
+	}
 
-    template<>
-    struct max_dim<0>
-    {
-        template<typename T, size_t N>
-        AKS_FUNCTION_PREFIX_ATTR static size_t apply(multi_dim_vector<T, N> const& v) { return v.m_max_dim; }
-    };
+	template<size_t N>
+	AKS_FUNCTION_PREFIX_ATTR size_t index(size_t const max_dims[N])
+	{
+		return 0;
+	}
+
+	template<size_t N, typename T, typename... Ts>
+	AKS_FUNCTION_PREFIX_ATTR size_t index(size_t const max_dims[N], T idx, Ts... ts)
+	{
+		static_assert(sizeof...(ts)+1 <= N, "failed");
+		auto const begin = N - (sizeof...(ts)+1) + 1; //use the next one.
+		auto const mult = multiply(&max_dims[begin], &max_dims[N]);
+		auto const add = index<N>(max_dims, ts...);
+		//assert(idx < max_dims[begin - 1]);
+		auto const ret = idx * mult + add;
+		//std::cout << idx << " * " << mult << " + " << add << " (" << begin << "," << sizeof...(ts) << ") = " << ret << std::endl;
+		return ret;
+	}
+
+	AKS_FUNCTION_PREFIX_ATTR void copy(size_t* /*data*/)
+	{
+
+	}
+
+	template<typename T, typename... Ts>
+	AKS_FUNCTION_PREFIX_ATTR void copy(size_t* data, T t, Ts... ts)
+	{
+		data[0] = t;
+		copy(data + 1, ts...);
+	}
 }
 
 template<typename _value_type, std::size_t _dimensions>
 struct multi_dim_vector
 {
-    typedef _value_type value_type;
-    typedef value_type& reference;
-    typedef value_type const& const_reference;
-    typedef value_type* iterator;
-    typedef value_type const* const_iterator;
-    typedef value_type* pointer;
-    typedef value_type const* const_pointer;
-    typedef size_t size_type;
-    typedef std::ptrdiff_t difference_type;
-    enum{ dimensions = _dimensions };
+	typedef _value_type value_type;
+	typedef value_type& reference;
+	typedef value_type const& const_reference;
+	typedef value_type* iterator;
+	typedef value_type const* const_iterator;
+	typedef value_type* pointer;
+	typedef value_type const* const_pointer;
+	typedef size_t size_type;
+	typedef std::ptrdiff_t difference_type;
+	enum { dimensions = _dimensions };
 
-    template<typename... Ds>
-    AKS_FUNCTION_PREFIX_ATTR multi_dim_vector(pointer data, size_type maxDim, Ds... dims) : m_max_dim(maxDim), m_data(data, dims...) {}
+	template<typename... Ds>
+	AKS_FUNCTION_PREFIX_ATTR multi_dim_vector(pointer data, Ds... dims) : m_data(data), m_max_dimensions()
+	{
+		multi_dim_vector_detail::copy(m_max_dimensions, dims...);
+	}
 
-    template<typename... Ds>
-    AKS_FUNCTION_PREFIX_ATTR reference operator()(Ds... idxs) { return data()[index(idxs...)]; }
+	template<typename... Ds>
+	AKS_FUNCTION_PREFIX_ATTR reference operator()(Ds... idxs) { return data()[index(idxs...)]; }
 
-    template<typename... Ds>
-    AKS_FUNCTION_PREFIX_ATTR const_reference operator()(Ds... idxs) const { return data()[index(idxs...)]; }
+	template<typename... Ds>
+	AKS_FUNCTION_PREFIX_ATTR const_reference operator()(Ds... idxs) const { return data()[index(idxs...)]; }
 
-    AKS_FUNCTION_PREFIX_ATTR pointer data() { return m_data.data(); }
-    AKS_FUNCTION_PREFIX_ATTR const_pointer data() const { return m_data.data(); }
+	AKS_FUNCTION_PREFIX_ATTR pointer data() { return m_data; }
+	AKS_FUNCTION_PREFIX_ATTR const_pointer data() const { return m_data; }
 
-    AKS_FUNCTION_PREFIX_ATTR pointer begin() { return m_data.data(); }
-    AKS_FUNCTION_PREFIX_ATTR const_pointer begin() const { return m_data.data(); }
-    AKS_FUNCTION_PREFIX_ATTR const_pointer cbegin() const { return m_data.data(); }
+	AKS_FUNCTION_PREFIX_ATTR pointer begin() { return m_data; }
+	AKS_FUNCTION_PREFIX_ATTR const_pointer begin() const { return m_data; }
+	AKS_FUNCTION_PREFIX_ATTR const_pointer cbegin() const { return m_data; }
 
-    AKS_FUNCTION_PREFIX_ATTR pointer end() { return data() + total_size(); }
-    AKS_FUNCTION_PREFIX_ATTR const_pointer end() const { return data() + total_size(); }
-    AKS_FUNCTION_PREFIX_ATTR const_pointer cend() const { return data() + total_size(); }
+	AKS_FUNCTION_PREFIX_ATTR pointer end() { return data() + total_size(); }
+	AKS_FUNCTION_PREFIX_ATTR const_pointer end() const { return data() + total_size(); }
+	AKS_FUNCTION_PREFIX_ATTR const_pointer cend() const { return data() + total_size(); }
 
-    AKS_FUNCTION_PREFIX_ATTR size_type total_size() const { return (m_max_dim * total_dimension_of_interior()); }
+	AKS_FUNCTION_PREFIX_ATTR size_type total_size() const
+	{
+		auto begin = &m_max_dimensions[0];
+		auto end = begin + dimensions;
+		return multi_dim_vector_detail::multiply(begin, end);
+	}
+
+	template<size_t N>
+	AKS_FUNCTION_PREFIX_ATTR size_type max_dimension() const
+	{
+		return m_max_dimensions[N];
+	}
 private:
-    typedef multi_dim_vector<value_type, dimensions - 1> interior_type;
+	template<typename... Ds>
+	AKS_FUNCTION_PREFIX_ATTR size_type index(size_type idx, Ds... idxs) const
+	{
+		return multi_dim_vector_detail::index<dimensions>(m_max_dimensions, idx, idxs...);
+	}
 
-    template<typename... Ds>
-    AKS_FUNCTION_PREFIX_ATTR size_type index(size_type idx, Ds... idxs) const
-    {
-        assert(idx < m_max_dim);
-        return idx * total_dimension_of_interior() + m_data.index(idxs...);
-    }
-
-    AKS_FUNCTION_PREFIX_ATTR size_t total_dimension_of_interior() const { return m_data.m_max_dim * m_data.total_dimension_of_interior(); }
-
-    size_type m_max_dim;
-    interior_type m_data;
-
-    friend struct multi_dim_vector<value_type, dimensions + 1>;
-
-    template<size_type _M>
-    friend struct multi_dim_vector_detail::max_dim;
-};
-
-template<typename _value_type>
-struct multi_dim_vector<_value_type, 1>
-{
-    typedef _value_type value_type;
-    typedef value_type& reference;
-    typedef value_type const& const_reference;
-    typedef value_type* iterator;
-    typedef value_type const* const_iterator;
-    typedef value_type* pointer;
-    typedef value_type const* const_pointer;
-    typedef std::size_t size_type;
-    typedef std::ptrdiff_t difference_type;
-    enum{ dimensions = 1 };
-
-    AKS_FUNCTION_PREFIX_ATTR multi_dim_vector(pointer data, std::size_t maxDim) :m_max_dim(maxDim), m_data(data){}
-
-    AKS_FUNCTION_PREFIX_ATTR reference operator()(std::size_t idx) { return m_data[index(idx)]; }
-    AKS_FUNCTION_PREFIX_ATTR const_reference operator()(std::size_t idx) const { return m_data[index(idx)]; }
-
-    AKS_FUNCTION_PREFIX_ATTR pointer data() { return m_data; }
-    AKS_FUNCTION_PREFIX_ATTR const_pointer data() const { return m_data; }
-
-    AKS_FUNCTION_PREFIX_ATTR pointer begin() { return data(); }
-    AKS_FUNCTION_PREFIX_ATTR const_pointer begin() const { return data(); }
-    AKS_FUNCTION_PREFIX_ATTR const_pointer cbegin() const { return data(); }
-
-    AKS_FUNCTION_PREFIX_ATTR pointer end() { return data() + m_max_dim; }
-    AKS_FUNCTION_PREFIX_ATTR const_pointer end() const { return data() + m_max_dim; }
-    AKS_FUNCTION_PREFIX_ATTR const_pointer cend() const { return data() + m_max_dim; }
-private:
-    AKS_FUNCTION_PREFIX_ATTR size_type index(size_type idx) const
-    {
-        assert(idx < m_max_dim);
-        return idx;
-    }
-
-    AKS_FUNCTION_PREFIX_ATTR size_type total_dimension_of_interior() const { return 1; }
-
-    size_type m_max_dim;
-    pointer m_data;
-
-    friend struct multi_dim_vector<value_type, dimensions + 1>;
-
-    template<size_t _M>
-    friend struct multi_dim_vector_detail::max_dim;
+	pointer m_data;
+	size_type m_max_dimensions[dimensions];
 };
 
 template<size_t X, typename T, size_t N>
-AKS_FUNCTION_PREFIX_ATTR size_t get_max_dim(multi_dim_vector<T, N> const& v) { return multi_dim_vector_detail::max_dim<X>::apply(v); }
+AKS_FUNCTION_PREFIX_ATTR size_t get_max_dim(multi_dim_vector<T, N> const& v) { return v.template max_dimension<N>(); }
 
 template<typename X, typename T, size_t N>
-AKS_FUNCTION_PREFIX_ATTR size_t get_max_dim(multi_dim_vector<T, N> const& v) { return multi_dim_vector_detail::max_dim<X::value>::apply(v); }
+AKS_FUNCTION_PREFIX_ATTR size_t get_max_dim(multi_dim_vector<T, N> const& v) { return v.template max_dimension<X::value>(); }
 
 template<typename T, typename... Ns>
 auto make_multi_dim_vector(T* data, Ns... ns)->multi_dim_vector <T, sizeof...(Ns)> { return multi_dim_vector <T, sizeof...(Ns)>(data, ns...); }
