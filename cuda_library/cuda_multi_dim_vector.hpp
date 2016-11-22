@@ -4,8 +4,8 @@
 #include <cstddef>
 #include <cassert>
 
-
-#define AKS_FUNCTION_PREFIX_ATTR __device__ __host__
+#include "defines.hpp"
+#include "variadic_arg_helpers.hpp"
 
 namespace aks
 {
@@ -43,6 +43,25 @@ namespace multi_dim_vector_detail
 		return ret;
 	}
 
+	template<size_t N, typename T>
+	AKS_FUNCTION_PREFIX_ATTR size_t index_with_products(size_t const max_dims[N], T idx)
+	{
+		return idx;
+	}
+
+	template<size_t N, typename T, typename... Ts>
+	AKS_FUNCTION_PREFIX_ATTR size_t index_with_products(size_t const max_dims[N], T idx, Ts... ts)
+	{
+		static_assert(sizeof...(ts)+1 <= N, "failed");
+		auto const add = index_with_products<N>(max_dims, ts...);
+		auto const begin = N - (sizeof...(ts)+1) + 1; //use the next one.
+		auto const mult = max_dims[begin];		
+		//assert(idx < max_dims[begin - 1]);
+		auto const ret = idx * mult + add;
+		//std::cout << idx << " * " << mult << " + " << add << " (" << begin << "," << sizeof...(ts) << ") = " << ret << std::endl;
+		return ret;
+	}
+
 	AKS_FUNCTION_PREFIX_ATTR void copy(size_t* /*data*/)
 	{
 
@@ -54,6 +73,39 @@ namespace multi_dim_vector_detail
 		data[0] = t;
 		copy(data + 1, ts...);
 	}
+
+	AKS_FUNCTION_PREFIX_ATTR void product(size_t* /*data*/)
+	{
+
+	}
+
+	template<typename T, typename... Ts>
+	AKS_FUNCTION_PREFIX_ATTR void product(size_t* data, T t, Ts... ts)
+	{
+		data[0] = aks::reduce<aks::product>::apply(t,ts...);
+		product(data + 1, ts...);
+	}
+
+	template<size_t N>
+	struct max_dimension
+	{		
+		template<size_t M>
+		AKS_FUNCTION_PREFIX_ATTR static size_t apply(size_t const* products)
+		{
+			return products[M] / products[M + 1];
+		}
+	};
+
+	template<>
+	struct max_dimension<1>
+	{
+		template<size_t M>
+		AKS_FUNCTION_PREFIX_ATTR static size_t apply(size_t const* products)
+		{
+			return products[M];
+		}
+	};
+
 }
 
 template<typename _value_type, std::size_t _dimensions>
@@ -71,9 +123,9 @@ struct multi_dim_vector
 	enum { dimensions = _dimensions };
 
 	template<typename... Ds>
-	AKS_FUNCTION_PREFIX_ATTR multi_dim_vector(pointer data, Ds... dims) : m_data(data), m_max_dimensions()
+	AKS_FUNCTION_PREFIX_ATTR multi_dim_vector(pointer data, Ds... dims) : m_data(data), m_products()
 	{
-		multi_dim_vector_detail::copy(m_max_dimensions, dims...);
+		multi_dim_vector_detail::product(m_products, dims...);
 	}
 
 	template<typename... Ds>
@@ -95,29 +147,28 @@ struct multi_dim_vector
 
 	AKS_FUNCTION_PREFIX_ATTR size_type total_size() const
 	{
-		auto begin = &m_max_dimensions[0];
-		auto end = begin + dimensions;
-		return multi_dim_vector_detail::multiply(begin, end);
+		return m_products[0];
 	}
 
 	template<size_t N>
 	AKS_FUNCTION_PREFIX_ATTR size_type max_dimension() const
 	{
-		return m_max_dimensions[N];
+		static_assert(N < dimensions, "Index is more than dimensions");
+		return multi_dim_vector_detail::max_dimension<dimensions - N>::template apply<N>(m_products);
 	}
 private:
 	template<typename... Ds>
 	AKS_FUNCTION_PREFIX_ATTR size_type index(size_type idx, Ds... idxs) const
 	{
-		return multi_dim_vector_detail::index<dimensions>(m_max_dimensions, idx, idxs...);
+		return multi_dim_vector_detail::index_with_products<dimensions>(m_products, idx, idxs...);
 	}
 
 	pointer m_data;
-	size_type m_max_dimensions[dimensions];
+	size_type m_products[dimensions];
 };
 
 template<size_t X, typename T, size_t N>
-AKS_FUNCTION_PREFIX_ATTR size_t get_max_dim(multi_dim_vector<T, N> const& v) { return v.template max_dimension<N>(); }
+AKS_FUNCTION_PREFIX_ATTR size_t get_max_dim(multi_dim_vector<T, N> const& v) { return v.template max_dimension<X>(); }
 
 template<typename X, typename T, size_t N>
 AKS_FUNCTION_PREFIX_ATTR size_t get_max_dim(multi_dim_vector<T, N> const& v) { return v.template max_dimension<X::value>(); }

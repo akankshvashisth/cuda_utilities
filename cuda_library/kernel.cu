@@ -12,6 +12,8 @@
 #include "cuda_multi_dim_vector_thrust_utils.hpp"
 #include "multi_dim_vector_with_memory.hpp"
 
+#include "compile_time_differentiation_tests.hpp"
+
 #include <thrust/functional.h>
 #include <thrust/sort.h>
 #include <assert.h>
@@ -48,6 +50,7 @@ using cuda_multi_dim_vector = aks::multi_dim_vector_with_memory<T, N, aks::cuda_
 
 void check2()
 {
+	compile_time_differentiation_tests();
 	{
 		host_multi_dim_vector<int, 3> vec(3, 4, 5);
 		auto view = vec.view();
@@ -58,6 +61,12 @@ void check2()
 	{  
 		host_multi_dim_vector<int, 3> host_vec(3, 4, 5);
 		auto host_view = host_vec.view();
+		auto m0 = host_view.max_dimension<0>();
+		auto m1 = host_view.max_dimension<1>();
+		auto m2 = host_view.max_dimension<2>();
+		auto m00 = aks::get_max_dim<0>(host_view);
+		auto m01 = aks::get_max_dim<1>(host_view);
+		auto m02 = aks::get_max_dim<2>(host_view);
 		for(size_t x=0; x<3; ++x)
 			for (size_t y = 0; y<4; ++y)
 				for (size_t z = 0; z < 5; ++z)
