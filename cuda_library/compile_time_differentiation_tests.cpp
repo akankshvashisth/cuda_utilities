@@ -219,7 +219,7 @@ auto value_gradient_at(std::tuple<Ts...> const& t, As... as)
 template<size_t I, typename T, typename R>
 auto set_value_to(T t, R& r)
 {
-	r[I] = t;
+	r(I) = t;
 	return t;
 }
 
@@ -404,9 +404,10 @@ int compile_time_differentiation_tests()
 		auto k = gradient(2 * x + 3 * y + 4 * z);
 		auto m = value_gradient_at(k, 1, 1, 1);
 		std::vector<int> res2(3);
-		value_gradient_at_in_res(k, res2, 1, 1, 1);
+		auto res2_func = [&res2](size_t v)->auto& {return res2[v]; };
+		value_gradient_at_in_res(k, res2_func, 1, 1, 1);
 		std::vector<std::vector<double>> res(get_number_of_function(j), std::vector<double>(get_number_of_variables(j), 0.0));
-		auto res_func = [&res](size_t fn, size_t v)->double& {return res[fn][v]; };
+		auto res_func = [&res](size_t fn, size_t v)->auto& {return res[fn][v]; };
 		value_jacobian_at(j, res_func, 1, 1, 1);
 		std::for_each(res.cbegin(), res.cend(), [](std::vector<double> const& v) {
 			std::for_each(v.cbegin(), v.cend(), [](double const& d) {
