@@ -216,31 +216,17 @@ auto value_gradient_at(std::tuple<Ts...> const& t, As... as)
 	return aks::tuple_utils::map(t, [=](auto f) { return f(as...); });	
 }
 
-template<size_t I, typename T, typename R>
-auto set_value_to(T t, R& r)
-{
-	r(I) = t;
-	return t;
-}
-
 template<typename... Ts, size_t... Is, typename R, typename... As>
-auto value_gradient_at_in_res(std::tuple<Ts...> const& t, sz_seq<Is...>, R& res, As... as)
+auto value_gradient_at_in_res_impl(std::tuple<Ts...> const& t, sz_seq<Is...>, R& res, As... as)
 {	
-	eat_up(
-		set_value_to<Is>(std::get<Is>(t)(as...), res)...
-	);
+	auto assign = [&res](size_t i, auto t) {res(i) = t; return 0; };
+	eat_up(assign( Is, std::get<Is>(t)(as...) )... );
 }
 
 template<typename... Ts, typename R, typename... As>
 auto value_gradient_at_in_res(std::tuple<Ts...> const& t, R& res, As... as)
 {
-	value_gradient_at_in_res(t, sz_gen_seq<sizeof...(Ts)>(), res, as...);
-	/*auto it = res.begin();
-	auto apply = [&](auto f) { 
-		*it = f(as...);
-		return *it++; 
-	};
-	return aks::tuple_utils::for_each(t, apply);*/
+	value_gradient_at_in_res_impl(t, sz_gen_seq<sizeof...(Ts)>(), res, as...);
 }
 
 template<typename T>
