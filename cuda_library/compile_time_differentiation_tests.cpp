@@ -243,6 +243,26 @@ auto value_gradient_at_in_res(std::tuple<Ts...> const& t, R& res, As... as)
 	return aks::tuple_utils::for_each(t, apply);*/
 }
 
+template<typename T>
+bool is_abs_greater_than(T t, T x)
+{
+	return t > x || t < -x;
+}
+
+template<typename F, typename T>
+auto newton_raphson(F f, T guess, T tolerance, int max_counter)
+{
+	auto val = f(guess);	
+	while (is_abs_greater_than(val, tolerance) && max_counter-- > 0)
+	{
+		guess = guess - val / aks::derivative(f)(guess);
+		val = f(guess);
+		std::cout << max_counter << " " << guess << " " << val << std::endl;
+	}
+	
+	return guess;
+}
+
 #include <string>
 
 int compile_time_differentiation_tests()
@@ -252,6 +272,7 @@ int compile_time_differentiation_tests()
 	aks::variable<1> y;
 	aks::variable<2> z;
 	aks::variable<3> w;
+	auto const pi = 3.1415926535897932384626433;
 
 	/////////////////////////////
 	//auto ode = sin(x*y)/y;
@@ -312,8 +333,8 @@ int compile_time_differentiation_tests()
 		std::string const a("hello ");
 		std::string const b("hello1 ");
 		std::string const c("hello2 ");
-		
-		std::cout << (x + " world " + y + y + " you")(a,b) << std::endl;
+
+		std::cout << (x + " world " + y + y + " you")(a, b) << std::endl;
 		std::cout << (x + z + y)(a, b, c) << std::endl;
 		std::cout << cos(x)(3.14159265 / 3.0) << std::endl;
 		std::cout << atan2(x, y)(1.0, 2.0) << std::endl;
@@ -335,11 +356,14 @@ int compile_time_differentiation_tests()
 	std::cout << demangle(typeid((2 * (x^y) + sqrt(w*z*x)*4.5 / tan(x / y)*exp(sin(x) ^ cos(y)*z) / w)).name()) << std::endl;
 
 	std::cout << get_dim(exp(sin(x) ^ cos(y)*z)) << std::endl;
+	{
+		auto eq = sin(x) - 1;
+		auto guess = 1.2;
+		auto root = newton_raphson(eq, guess, 1e-15, 20);
 
-	auto eq = (x*x - 3.14159265);
-	auto guess = 1.2;
-	//auto root = newton_raphson( eq , guess );
-	//std::cout << root << " " << eq(root) << std::endl;
+		auto pi_by_what = [pi](auto x) { return pi / x; };
+		std::cout << root << " " << eq(root) << " pi/" << pi_by_what(root) << std::endl;
+	}
 	{
 		std::cout << depends_on(x*x, x) << std::endl;
 		std::cout << depends_on(x*x, y) << std::endl;
@@ -596,20 +620,19 @@ int compile_time_differentiation_tests()
 		std::cout << demangle(typeid(a10).name()) << std::endl;
 		std::cout << demangle(typeid(a11).name()) << std::endl;
 		//std::cout << demangle(typeid(a12).name()) << std::endl;
-
-		auto const pi_by_2 = 3.1415926535897932384626433 / 2.0;
-		std::cout << a0(pi_by_2) << std::endl;
-		std::cout << a1(pi_by_2) << std::endl;
-		std::cout << a2(pi_by_2) << std::endl;
-		std::cout << a3(pi_by_2) << std::endl;
-		std::cout << a4(pi_by_2) << std::endl;
-		std::cout << a5(pi_by_2) << std::endl;
-		std::cout << a6(pi_by_2) << std::endl;
-		std::cout << a7(pi_by_2) << std::endl;
-		std::cout << a8(pi_by_2) << std::endl;
-		std::cout << a9(pi_by_2) << std::endl;
-		std::cout << a10(pi_by_2) << std::endl;
-		std::cout << a11(pi_by_2) << std::endl;
+		
+		std::cout << a0(pi / 2.0) << std::endl;
+		std::cout << a1(pi / 2.0) << std::endl;
+		std::cout << a2(pi / 2.0) << std::endl;
+		std::cout << a3(pi / 2.0) << std::endl;
+		std::cout << a4(pi / 2.0) << std::endl;
+		std::cout << a5(pi / 2.0) << std::endl;
+		std::cout << a6(pi / 2.0) << std::endl;
+		std::cout << a7(pi / 2.0) << std::endl;
+		std::cout << a8(pi / 2.0) << std::endl;
+		std::cout << a9(pi / 2.0) << std::endl;
+		std::cout << a10(pi / 2.0) << std::endl;
+		std::cout << a11(pi / 2.0) << std::endl;
 	}
 	{
 		auto b0 = sqrt(x*y);
