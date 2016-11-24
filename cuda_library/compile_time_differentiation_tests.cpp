@@ -14,6 +14,20 @@
 #include "compile_time_differentiation.hpp"
 #include "tuple_helper_utilities.hpp"
 
+std::string& replace(
+	std::string& s,
+	std::string const & o,
+	std::string const & n)
+{
+	std::string::size_type p = 0u;
+	std::string::size_type const ol = o.length();
+	std::string::size_type const nl = n.length();
+	while ((p = s.find(o, p)) != std::string::npos) {
+		s.replace(p, ol, n);
+		p += nl;
+	}
+	return s;
+}
 std::string demangle(const char* name) {
 
 	//int status = -4; // some arbitrary value to eliminate the compiler warning
@@ -25,7 +39,33 @@ std::string demangle(const char* name) {
 	//};
 	//
 	//return (status == 0) ? res.get() : name;
-	return name;
+	std::string ret(name);
+	replace(ret, "aks::", "");
+	replace(ret, "struct ", "");
+	replace(ret, "binary", "B");
+	replace(ret, "unary", "U");
+	replace(ret, "variable", "V");
+	replace(ret, "constant", "C");
+	replace(ret, "power", "^");
+	replace(ret, "add", "+");
+	replace(ret, "mul", "*");
+	replace(ret, "dvd", "/");
+	replace(ret, "sub", "-");
+	replace(ret, "exponential", "exp");
+	replace(ret, "sq_root", "sqrt");
+	replace(ret, "double", "dbl");
+	replace(ret, "tangent", "tan");
+	replace(ret, "cosine", "cos");
+	replace(ret, "sine", "sin");
+	replace(ret, "cube_root", "cbrt");
+	replace(ret, "negation", "neg");
+	replace(ret, "V<0>", "x");
+	replace(ret, "V<1>", "y");
+	replace(ret, "V<2>", "z");
+	replace(ret, "V<3>", "w");
+	replace(ret, "C<int>", "K");
+	replace(ret, "C<dbl>", "K");
+	return ret;
 }
 
 template<typename T>
@@ -246,10 +286,58 @@ auto newton_raphson(F f, T guess, T tolerance, int max_counter)
 		std::cout << max_counter << " " << guess << " " << val << std::endl;
 	}
 	
-	return guess;
+	return std::make_tuple(guess, !is_abs_greater_than(val, tolerance));
 }
 
 #include <string>
+
+#include <sstream>
+
+std::string to_string(bool b) 
+{ 
+	return b ? "true" : "false";  
+};
+
+template<typename T>
+std::string to_string(T const& v)
+{
+	std::stringstream ss;
+	ss << v;
+	return ss.str();
+}
+
+template<typename T>
+std::string to_string(std::vector<T> const& v) {
+	std::stringstream ss;
+	ss << "{";
+	if (!v.empty())
+	{
+		auto begin = v.cbegin();
+		ss << to_string(*begin++);
+		std::for_each(begin, v.cend(), [&](auto const& d) {
+			ss << ", " << to_string(d);
+		});
+	}
+	ss << "}";
+	return ss.str();
+};
+
+template<typename T>
+std::string to_string(std::vector<std::vector<T>> const& v) {
+	std::stringstream ss;
+	ss << "{";
+	if (!v.empty())
+	{			
+		auto begin = v.cbegin();
+		ss << "\n  " << to_string(*begin++);
+		std::for_each(begin, v.cend(), [&](auto const& d) {
+			ss << "\n, " << to_string(d);
+		});
+		ss << "\n";
+	}
+	ss << "}";
+	return ss.str();
+};
 
 int compile_time_differentiation_tests()
 {
@@ -345,10 +433,14 @@ int compile_time_differentiation_tests()
 	{
 		auto eq = sin(x) - 1;
 		auto guess = 1.2;
-		auto root = newton_raphson(eq, guess, 1e-15, 20);
+		double root;
+		bool converged;
+		std::tie(root, converged) = newton_raphson(eq, guess, 1e-13, 20);
+
+		
 
 		auto pi_by_what = [pi](auto x) { return pi / x; };
-		std::cout << root << " " << eq(root) << " pi/" << pi_by_what(root) << std::endl;
+		std::cout << root << " " << to_string(converged) << " "<< eq(root) << " pi/" << pi_by_what(root) << std::endl;
 	}
 	{
 		std::cout << depends_on(x*x, x) << std::endl;
@@ -375,32 +467,23 @@ int compile_time_differentiation_tests()
 		auto j = jacobian(x*w, y*z, y*y, z*z, x*x, y*x*z + x*w);
 		std::vector<std::vector<double>> res(get_number_of_function(j), std::vector<double>(get_number_of_variables(j), 0.0));
 		auto res_func = [&res](size_t fn, size_t v)->double& {return res[fn][v]; };
-
 		value_jacobian_at(j, res_func, 1.5, 3.3, 2.7, 3.4);
-
-		std::for_each(res.cbegin(), res.cend(), [](std::vector<double> const& v) {
-			std::for_each(v.cbegin(), v.cend(), [](double const& d) {
-				std::cout << d << "\t";
-			});
-			std::cout << std::endl;
-		});
+		std::cout << to_string(res) << std::endl;
 	}
 	{
 		auto j = jacobian(2 * x + 3 * y + 4 * z);
 		auto k = gradient(2 * x + 3 * y + 4 * z);
-		auto m = value_gradient_at(k, 1, 1, 1);
 		std::vector<int> res2(3);
+		auto m = value_gradient_at(k, 1, 1, 1);
+		std::tie(res2[0], res2[1], res2[2]) = m;
+		std::cout << to_string(res2) << std::endl;
 		auto res2_func = [&res2](size_t v)->auto& {return res2[v]; };
 		value_gradient_at_in_res(k, res2_func, 1, 1, 1);
+		std::cout << to_string(res2) << std::endl;
 		std::vector<std::vector<double>> res(get_number_of_function(j), std::vector<double>(get_number_of_variables(j), 0.0));
 		auto res_func = [&res](size_t fn, size_t v)->auto& {return res[fn][v]; };
 		value_jacobian_at(j, res_func, 1, 1, 1);
-		std::for_each(res.cbegin(), res.cend(), [](std::vector<double> const& v) {
-			std::for_each(v.cbegin(), v.cend(), [](double const& d) {
-				std::cout << d << "\t";
-			});
-			std::cout << std::endl;
-		});
+		std::cout << to_string(res2) << std::endl;
 		std::cout << std::endl;
 	}
 	/////////////////////////////
@@ -431,7 +514,8 @@ int compile_time_differentiation_tests()
 		std::vector<std::vector<double>> res(get_number_of_function(j), std::vector<double>(get_number_of_variables(j), 0.0));
 		auto res_func = [&res](size_t fn, size_t v)->double& {return res[fn][v]; };
 		value_jacobian_at(j, res_func, 1.5, 3.3, 2.7, 3.4);
-
+		std::cout << to_string(res) << std::endl;
+		std::cout << std::endl;
 		//std::cout << demangle(typeid(j).name()) << std::endl;
 		std::cout << get_jacobian_element<0, 0>(j)(1.5, 3.3, 2.7, 3.4) << ", ";
 		std::cout << get_jacobian_element<0, 1>(j)(1.5, 3.3, 2.7, 3.4) << ", ";
@@ -451,7 +535,8 @@ int compile_time_differentiation_tests()
 		std::vector<double> res(get_number_of_function(j) * get_number_of_variables(j));
 		auto res_func = [&res, j](size_t fn, size_t v)->double& {return res[fn * get_number_of_variables(j) + v]; };
 		value_jacobian_at(j, res_func, 1.5, 3.3, 2.7, 3.4);
-
+		std::cout << to_string(res) << std::endl;
+		std::cout << std::endl;
 		//std::cout << demangle(typeid(j).name()) << std::endl;
 		std::cout << get_jacobian_element<0, 0>(j)(1.5, 3.3, 2.7, 3.4) << ", ";
 		std::cout << get_jacobian_element<0, 1>(j)(1.5, 3.3, 2.7, 3.4) << ", ";
