@@ -174,12 +174,14 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <ClInclude Include="cuda_pointer_thrust_utils.hpp" />
     <ClInclude Include="cuda_pointer_vector_utils.hpp" />
     <ClInclude Include="defines.hpp" />
+    <ClInclude Include="experiments.hpp" />
     <ClInclude Include="multi_dim_vector_with_memory.hpp" />
     <ClInclude Include="tuple_helper_utilities.hpp" />
     <ClInclude Include="variadic_arg_helpers.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="compile_time_differentiation_tests.cpp" />
+    <ClCompile Include="experiments.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

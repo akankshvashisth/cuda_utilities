@@ -13,6 +13,7 @@
 #include "multi_dim_vector_with_memory.hpp"
 
 #include "compile_time_differentiation_tests.hpp"
+#include "experiments.hpp"
 
 #include <thrust/functional.h>
 #include <thrust/sort.h>
@@ -88,7 +89,9 @@ void check2()
 
 int main()
 {
+	run_experiments();
 	check2();
+
     //aks::cuda_context ctxt;
     
     std::vector<int> const a = { 1, 2, 3, 4, 5 };

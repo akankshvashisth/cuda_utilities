@@ -20,8 +20,7 @@ std::string& replace(
 	std::string const & n)
 {
 	std::string::size_type p = 0u;
-	std::string::size_type const ol = o.length();
-	std::string::size_type const nl = n.length();
+	auto const ol = o.length(), nl = n.length();
 	while ((p = s.find(o, p)) != std::string::npos) {
 		s.replace(p, ol, n);
 		p += nl;
