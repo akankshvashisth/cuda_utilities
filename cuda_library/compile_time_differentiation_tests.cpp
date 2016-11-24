@@ -162,8 +162,8 @@ struct size_t_holder
 template<size_t Fn, size_t Vn, typename... Ts, typename R, typename... As>
 auto set_value(std::tuple<Ts...> const& t, R& res, std::tuple<As...> const& a, size_t_holder<Vn>)
 {
-	std::cout << "Function = " << Fn << " " << "Variable = " << Vn << std::endl;
-	res[Fn][Vn] = apply(get_jacobian_element<Fn, Vn>(t), a);
+	//std::cout << "Function = " << Fn << " " << "Variable = " << Vn << " " << "Value = " << apply(get_jacobian_element<Fn, Vn>(t), a) << std::endl;
+	res(Fn,Vn) = apply(get_jacobian_element<Fn, Vn>(t), a);
 	return true;
 }
 
@@ -210,16 +210,10 @@ constexpr auto gradient(F f)
 	return std::get<0>(jacobian(f));
 }
 
-template<typename... Ts, size_t... Is, typename... As>
-auto value_gradient_at_internal(std::tuple<Ts...> const& t, sz_seq<Is...>, As... as)
-{	
-	return std::make_tuple(std::get<Is>(t)(as...)...);
-}
-
 template<typename... Ts, typename... As>
 auto value_gradient_at(std::tuple<Ts...> const& t, As... as)
-{		
-	return value_gradient_at_internal(t, sz_gen_seq<sizeof...(Ts)>(), as...);
+{			
+	return aks::tuple_utils::map(t, [=](auto f) { return f(as...); });	
 }
 
 template<size_t I, typename T, typename R>
@@ -277,94 +271,102 @@ int compile_time_differentiation_tests()
 	//}
 	//std::cout << t << std::endl;
 	/////////////////////////////
+	{
+		std::cout << ((x)(2) == 2) << std::endl;
+		std::cout << ((y)(2, 3.5) == 3.5) << std::endl;
+		std::cout << ((z)(2, 3, 4) == 4) << std::endl;
+		std::cout << ((w)(2, 3, 4, 5) == 5) << std::endl;
 
-	std::cout << ((x)(2) == 2) << std::endl;
-	std::cout << ((y)(2, 3.5) == 3.5) << std::endl;
-	std::cout << ((z)(2, 3, 4) == 4) << std::endl;
-	std::cout << ((w)(2, 3, 4, 5) == 5) << std::endl;
+		std::cout << ((x + x)(2) == 4) << std::endl;
+		std::cout << ((y + y)(2, 3.5) == 7.0) << std::endl;
+		std::cout << ((z + z)(2, 3, 4) == 8) << std::endl;
 
-	std::cout << ((x + x)(2) == 4) << std::endl;
-	std::cout << ((y + y)(2, 3.5) == 7.0) << std::endl;
-	std::cout << ((z + z)(2, 3, 4) == 8) << std::endl;
+		std::cout << ((x + x)(2) == 4) << std::endl;
+		std::cout << ((x + y)(2, 3.5) == 5.5) << std::endl;
+		std::cout << ((x + z)(2, 3, 4) == 6) << std::endl;
 
-	std::cout << ((x + x)(2) == 4) << std::endl;
-	std::cout << ((x + y)(2, 3.5) == 5.5) << std::endl;
-	std::cout << ((x + z)(2, 3, 4) == 6) << std::endl;
+		std::cout << ((x + 2)(2) == 4) << std::endl;
+		std::cout << ((2 + x)(2) == 4) << std::endl;
 
-	std::cout << ((x + 2)(2) == 4) << std::endl;
-	std::cout << ((2 + x)(2) == 4) << std::endl;
+		std::cout << ((x + y + 3 + z)(1, 2, 4) == 10) << std::endl;
 
-	std::cout << ((x + y + 3 + z)(1, 2, 4) == 10) << std::endl;
+		std::cout << ((x*x)(2) == 4) << std::endl;
+		std::cout << ((y*y)(2, 3.5) == 12.25) << std::endl;
+		std::cout << ((z*z)(2, 3, 4) == 16) << std::endl;
 
-	std::cout << ((x*x)(2) == 4) << std::endl;
-	std::cout << ((y*y)(2, 3.5) == 12.25) << std::endl;
-	std::cout << ((z*z)(2, 3, 4) == 16) << std::endl;
+		std::cout << ((x*x)(2) == 4) << std::endl;
+		std::cout << ((x*y)(2, 3.5) == 7.0) << std::endl;
+		std::cout << ((x*z)(2, 3, 4) == 8) << std::endl;
 
-	std::cout << ((x*x)(2) == 4) << std::endl;
-	std::cout << ((x*y)(2, 3.5) == 7.0) << std::endl;
-	std::cout << ((x*z)(2, 3, 4) == 8) << std::endl;
+		std::cout << ((x * 2)(2) == 4) << std::endl;
+		std::cout << ((2 * x)(2) == 4) << std::endl;
 
-	std::cout << ((x * 2)(2) == 4) << std::endl;
-	std::cout << ((2 * x)(2) == 4) << std::endl;
+		std::cout << ((x*y * 3 * z)(1, 2, 4) == 24) << std::endl;
 
-	std::cout << ((x*y * 3 * z)(1, 2, 4) == 24) << std::endl;
+		std::cout << ((x*y*z + x*x*x + y*z / (x*2.5) - z + z*z)(2.0, 3.0, 4.0) == 46.4) << std::endl;
 
-	std::cout << ((x*y*z + x*x*x + y*z / (x*2.5) - z + z*z)(2.0, 3.0, 4.0) == 46.4) << std::endl;
+		std::cout << ((x ^ 5)(2) == 32) << std::endl;
+		std::cout << ((5 ^ x)(2) == 25) << std::endl;
+	}
+	{
+		std::string const a("hello ");
+		std::string const b("hello1 ");
+		std::string const c("hello2 ");
+		
+		std::cout << (x + " world " + y + y + " you")(a,b) << std::endl;
+		std::cout << (x + z + y)(a, b, c) << std::endl;
+		std::cout << cos(x)(3.14159265 / 3.0) << std::endl;
+		std::cout << atan2(x, y)(1.0, 2.0) << std::endl;
+	}
 
-	std::cout << ((x ^ 5)(2) == 32) << std::endl;
-	std::cout << ((5 ^ x)(2) == 25) << std::endl;
-
-
-	std::string const a("hello ");
-	std::string const b("hello1 ");
-	std::string const c("hello2 ");
-
-	std::cout << (x + z + y)(a, b, c) << std::endl;
-	std::cout << cos(x)(3.14159265 / 3.0) << std::endl;
-	std::cout << atan2(x, y)(1.0, 2.0) << std::endl;
-
-
-	std::cout << ( (sin(x)^2) + (cos(x)^2) )(0.23) << std::endl;
-	std::cout << ( (sin(x)^2) + (cos(x)^2) )(0.53) << std::endl;
-	std::cout << ( (sin(x)^2) + (cos(x)^2) )(3.14159265) << std::endl;
+	std::cout << ((sin(x) ^ 2) + (cos(x) ^ 2))(0.23) << std::endl;
+	std::cout << ((sin(x) ^ 2) + (cos(x) ^ 2))(0.53) << std::endl;
+	std::cout << ((sin(x) ^ 2) + (cos(x) ^ 2))(3.14159265) << std::endl;
 
 	/////////////////////////////
-	std::cout << ( sin(x)/cos(x) )(0.23) << " " << (tan(x))(0.23) << std::endl;
-	
-	std::cout << sin(2*x)(0.23)  << " " << (2*sin(x)*cos(x))(0.23) << std::endl;
-	
-	std::cout << sin(-x)(0.23)  << " " << (-sin(x))(0.23) << std::endl;
-	
-	std::cout << (exp(sin(x)^cos(y)*z)/w)(0.25, 0.50, 0.33, 0.75) << std::endl;
-	
-	std::cout << demangle(typeid((2*(x^y)+sqrt(w*z*x)*4.5/tan(x/y)*exp(sin(x)^cos(y)*z)/w)).name()) << std::endl;
-	
-	std::cout << get_dim(exp(sin(x)^cos(y)*z)) << std::endl;
-	
-	auto eq = (x*x-3.14159265);
+	std::cout << (sin(x) / cos(x))(0.23) << " " << (tan(x))(0.23) << std::endl;
+
+	std::cout << sin(2 * x)(0.23) << " " << (2 * sin(x)*cos(x))(0.23) << std::endl;
+
+	std::cout << sin(-x)(0.23) << " " << (-sin(x))(0.23) << std::endl;
+
+	std::cout << (exp(sin(x) ^ cos(y)*z) / w)(0.25, 0.50, 0.33, 0.75) << std::endl;
+
+	std::cout << demangle(typeid((2 * (x^y) + sqrt(w*z*x)*4.5 / tan(x / y)*exp(sin(x) ^ cos(y)*z) / w)).name()) << std::endl;
+
+	std::cout << get_dim(exp(sin(x) ^ cos(y)*z)) << std::endl;
+
+	auto eq = (x*x - 3.14159265);
 	auto guess = 1.2;
 	//auto root = newton_raphson( eq , guess );
 	//std::cout << root << " " << eq(root) << std::endl;
-	
-	std::cout << depends_on(x*x, x) << std::endl;
-	std::cout << depends_on(x*x, y) << std::endl;
-	std::cout << depends_on(x*y, y) << std::endl;
-	std::cout << depends_on((2*x)^w+sqrt(w*x)*4.5/tan(x/w)*exp(sin(x)^cos(w)*z)/w, x) << std::endl;
-	std::cout << depends_on((2*x)^w+sqrt(w*x)*4.5/tan(x/w)*exp(sin(x)^cos(w)*z)/w, y) << std::endl;
-	std::cout << depends_on((2*x)^w+sqrt(w*x)*4.5/tan(x/w)*exp(sin(x)^cos(w)*z)/w, z) << std::endl;
-	std::cout << depends_on((2*x)^w+sqrt(w*x)*4.5/tan(x/w)*exp(sin(x)^cos(w)*z)/w, w) << std::endl;
-	auto dd = differentiate(x*y*y,y);
-	std::cout << dd(2, 3) << std::endl;
-	std::cout << demangle(typeid(dd).name()) << std::endl;
-	
-	auto dd2 = differentiate(sin(y*x), x);
-	std::cout << dd2(0.25, 0.63) << std::endl;
-	
-	std::cout << Max<3,2,4,2,5,3,6,3,2,4,2,2>::value << std::endl;
+	{
+		std::cout << depends_on(x*x, x) << std::endl;
+		std::cout << depends_on(x*x, y) << std::endl;
+		std::cout << depends_on(x*y, y) << std::endl;
+		std::cout << depends_on((2 * x) ^ w + sqrt(w*x)*4.5 / tan(x / w)*exp(sin(x) ^ cos(w)*z) / w, x) << std::endl;
+		std::cout << depends_on((2 * x) ^ w + sqrt(w*x)*4.5 / tan(x / w)*exp(sin(x) ^ cos(w)*z) / w, y) << std::endl;
+		std::cout << depends_on((2 * x) ^ w + sqrt(w*x)*4.5 / tan(x / w)*exp(sin(x) ^ cos(w)*z) / w, z) << std::endl;
+		std::cout << depends_on((2 * x) ^ w + sqrt(w*x)*4.5 / tan(x / w)*exp(sin(x) ^ cos(w)*z) / w, w) << std::endl;
+	}
+	{
+		auto dd = differentiate(x*y*y, y);
+		std::cout << dd(2, 3) << std::endl;
+		std::cout << demangle(typeid(dd).name()) << std::endl;
+	}
+	{
+		auto dd2 = differentiate(sin(y*x), x);
+		std::cout << dd2(0.25, 0.63) << std::endl;
+	}
+	{
+		std::cout << Max<3, 2, 4, 2, 5, 3, 6, 3, 2, 4, 2, 2>::value << std::endl;
+	}
 	{
 		auto j = jacobian(x*w, y*z, y*y, z*z, x*x, y*x*z + x*w);
 		std::vector<std::vector<double>> res(get_number_of_function(j), std::vector<double>(get_number_of_variables(j), 0.0));
-		value_jacobian_at(j, res, 1.5, 3.3, 2.7, 3.4);
+		auto res_func = [&res](size_t fn, size_t v)->double& {return res[fn][v]; };
+
+		value_jacobian_at(j, res_func, 1.5, 3.3, 2.7, 3.4);
 
 		std::for_each(res.cbegin(), res.cend(), [](std::vector<double> const& v) {
 			std::for_each(v.cbegin(), v.cend(), [](double const& d) {
@@ -374,13 +376,14 @@ int compile_time_differentiation_tests()
 		});
 	}
 	{
-		auto j = jacobian(2*x + 3*y + 4*z);
+		auto j = jacobian(2 * x + 3 * y + 4 * z);
 		auto k = gradient(2 * x + 3 * y + 4 * z);
 		auto m = value_gradient_at(k, 1, 1, 1);
 		std::vector<int> res2(3);
 		value_gradient_at_in_res(k, res2, 1, 1, 1);
 		std::vector<std::vector<double>> res(get_number_of_function(j), std::vector<double>(get_number_of_variables(j), 0.0));
-		value_jacobian_at(j, res, 1,1,1);
+		auto res_func = [&res](size_t fn, size_t v)->double& {return res[fn][v]; };
+		value_jacobian_at(j, res_func, 1, 1, 1);
 		std::for_each(res.cbegin(), res.cend(), [](std::vector<double> const& v) {
 			std::for_each(v.cbegin(), v.cend(), [](double const& d) {
 				std::cout << d << "\t";
@@ -390,19 +393,20 @@ int compile_time_differentiation_tests()
 		std::cout << std::endl;
 	}
 	/////////////////////////////
-
-	auto ds = (x*y*z);
-	std::cout << ds(2, 3, 4) << std::endl;
-	std::cout << differentiate((x*y*z), x)(2, 3, 4) << std::endl;
-	std::cout << demangle(typeid(ds).name()) << std::endl;
-	auto dds = differentiate(ds, x);
-	std::cout << demangle(typeid(dds).name()) << std::endl;
-	auto ddds = differentiate(dds, y);
-	std::cout << demangle(typeid(ddds).name()) << std::endl;
-	auto dddds = differentiate(ddds, z);
-	std::cout << demangle(typeid(dddds).name()) << std::endl;
-	auto ddddds = differentiate(dddds, x);
-
+	{
+		auto ds = (x*y*z);
+		std::cout << ds(2, 3, 4) << std::endl;
+		std::cout << differentiate((x*y*z), x)(2, 3, 4) << std::endl;
+		std::cout << demangle(typeid(ds).name()) << std::endl;
+		auto dds = differentiate(ds, x);
+		std::cout << demangle(typeid(dds).name()) << std::endl;
+		auto ddds = differentiate(dds, y);
+		std::cout << demangle(typeid(ddds).name()) << std::endl;
+		auto dddds = differentiate(ddds, z);
+		std::cout << demangle(typeid(dddds).name()) << std::endl;
+		auto ddddds = differentiate(dddds, x);
+		std::cout << demangle(typeid(ddddds).name()) << std::endl;
+	}
 
 	//std::cout << std::to_string(ds) << "\n"
 	//	<< std::to_string(dds) << "\n"
@@ -411,140 +415,206 @@ int compile_time_differentiation_tests()
 	//	<< std::to_string(ddddds) << "\n"
 	//	<< std::endl;
 
-	auto j = jacobian(x*w, y*z, y*y, z*z, x*x, y*x*z + x*w);
-	std::vector<std::vector<double>> res(get_number_of_function(j), std::vector<double>(get_number_of_variables(j), 0.0));
-	value_jacobian_at(j, res, 1.5, 3.3, 2.7, 3.4);
+	{
+		auto j = jacobian(x*w, y*z, y*y, z*z, x*x, y*x*z + x*w);
+		std::vector<std::vector<double>> res(get_number_of_function(j), std::vector<double>(get_number_of_variables(j), 0.0));
+		auto res_func = [&res](size_t fn, size_t v)->double& {return res[fn][v]; };
+		value_jacobian_at(j, res_func, 1.5, 3.3, 2.7, 3.4);
 
-	std::cout << demangle(typeid(j).name()) << std::endl;
-	std::cout << get_jacobian_element<0, 0>(j)(1.5, 3.3, 2.7, 3.4) << ", ";
-	std::cout << get_jacobian_element<0, 1>(j)(1.5, 3.3, 2.7, 3.4) << ", ";
-	std::cout << get_jacobian_element<0, 2>(j)(1.5, 3.3, 2.7, 3.4) << std::endl;
-	std::cout << get_jacobian_element<1, 0>(j)(1.5, 3.3, 2.7, 3.4) << ", ";
-	std::cout << get_jacobian_element<1, 1>(j)(1.5, 3.3, 2.7, 3.4) << ", ";
-	std::cout << get_jacobian_element<1, 2>(j)(1.5, 3.3, 2.7, 3.4) << std::endl;
-	std::cout << get_jacobian_element<2, 0>(j)(1.5, 3.3, 2.7, 3.4) << ", ";
-	std::cout << get_jacobian_element<2, 1>(j)(1.5, 3.3, 2.7, 3.4) << ", ";
-	std::cout << get_jacobian_element<2, 2>(j)(1.5, 3.3, 2.7, 3.4) << std::endl;
-	std::cout << get_jacobian_element<3, 0>(j)(1.5, 3.3, 2.7, 3.4) << ", ";
-	std::cout << get_jacobian_element<3, 1>(j)(1.5, 3.3, 2.7, 3.4) << ", ";
-	std::cout << get_jacobian_element<3, 2>(j)(1.5, 3.3, 2.7, 3.4) << std::endl;
+		//std::cout << demangle(typeid(j).name()) << std::endl;
+		std::cout << get_jacobian_element<0, 0>(j)(1.5, 3.3, 2.7, 3.4) << ", ";
+		std::cout << get_jacobian_element<0, 1>(j)(1.5, 3.3, 2.7, 3.4) << ", ";
+		std::cout << get_jacobian_element<0, 2>(j)(1.5, 3.3, 2.7, 3.4) << std::endl;
+		std::cout << get_jacobian_element<1, 0>(j)(1.5, 3.3, 2.7, 3.4) << ", ";
+		std::cout << get_jacobian_element<1, 1>(j)(1.5, 3.3, 2.7, 3.4) << ", ";
+		std::cout << get_jacobian_element<1, 2>(j)(1.5, 3.3, 2.7, 3.4) << std::endl;
+		std::cout << get_jacobian_element<2, 0>(j)(1.5, 3.3, 2.7, 3.4) << ", ";
+		std::cout << get_jacobian_element<2, 1>(j)(1.5, 3.3, 2.7, 3.4) << ", ";
+		std::cout << get_jacobian_element<2, 2>(j)(1.5, 3.3, 2.7, 3.4) << std::endl;
+		std::cout << get_jacobian_element<3, 0>(j)(1.5, 3.3, 2.7, 3.4) << ", ";
+		std::cout << get_jacobian_element<3, 1>(j)(1.5, 3.3, 2.7, 3.4) << ", ";
+		std::cout << get_jacobian_element<3, 2>(j)(1.5, 3.3, 2.7, 3.4) << std::endl;
+	}
+	{
+		auto j = jacobian(x*w, y*z, y*y, z*z, x*x, y*x*z + x*w);
+		std::vector<double> res(get_number_of_function(j) * get_number_of_variables(j));
+		auto res_func = [&res, j](size_t fn, size_t v)->double& {return res[fn * get_number_of_variables(j) + v]; };
+		value_jacobian_at(j, res_func, 1.5, 3.3, 2.7, 3.4);
 
-	auto fs_sum = x + y + z + (x^2.0) + x*y + x*z + (y^2.0) + y*z + (z^2.0) + (x^3.0);
-	std::cout << "-------" << fs_sum(1.2, 3.2, 1.3) << "-------" << std::endl;
+		//std::cout << demangle(typeid(j).name()) << std::endl;
+		std::cout << get_jacobian_element<0, 0>(j)(1.5, 3.3, 2.7, 3.4) << ", ";
+		std::cout << get_jacobian_element<0, 1>(j)(1.5, 3.3, 2.7, 3.4) << ", ";
+		std::cout << get_jacobian_element<0, 2>(j)(1.5, 3.3, 2.7, 3.4) << std::endl;
+		std::cout << get_jacobian_element<1, 0>(j)(1.5, 3.3, 2.7, 3.4) << ", ";
+		std::cout << get_jacobian_element<1, 1>(j)(1.5, 3.3, 2.7, 3.4) << ", ";
+		std::cout << get_jacobian_element<1, 2>(j)(1.5, 3.3, 2.7, 3.4) << std::endl;
+		std::cout << get_jacobian_element<2, 0>(j)(1.5, 3.3, 2.7, 3.4) << ", ";
+		std::cout << get_jacobian_element<2, 1>(j)(1.5, 3.3, 2.7, 3.4) << ", ";
+		std::cout << get_jacobian_element<2, 2>(j)(1.5, 3.3, 2.7, 3.4) << std::endl;
+		std::cout << get_jacobian_element<3, 0>(j)(1.5, 3.3, 2.7, 3.4) << ", ";
+		std::cout << get_jacobian_element<3, 1>(j)(1.5, 3.3, 2.7, 3.4) << ", ";
+		std::cout << get_jacobian_element<3, 2>(j)(1.5, 3.3, 2.7, 3.4) << std::endl;
+	}
+	{
+		auto fs_sum = x + y + z + (x^2.0) + x*y + x*z + (y^2.0) + y*z + (z^2.0) + (x^3.0);
+		std::cout << "-------" << fs_sum(1.2, 3.2, 1.3) << "-------" << std::endl;
 
+		auto fs = functions(x, y, z, x ^ 2, x*y, x*z, y ^ 2, y*z, z ^ 2, x ^ 3);
+		auto eval = evaluate(fs, 1.2, 3.2, 1.3);
 
-	auto fs = functions(x, y, z, x ^ 2, x*y, x*z, y ^ 2, y*z, z ^ 2, x ^ 3);
-	auto eval = evaluate(fs, 1.2, 3.2, 1.3);
+		std::cout << demangle(typeid(fs).name()) << std::endl;
+		std::cout << demangle(typeid(eval).name()) << std::endl;
+		std::cout << demangle(typeid(fs_sum).name()) << std::endl;
 
-	std::cout << demangle(typeid(fs).name()) << std::endl;
-	std::cout << demangle(typeid(eval).name()) << std::endl;
-	std::cout << demangle(typeid(fs_sum).name()) << std::endl;
+		for_each_in_tuple(eval, [](double d) { std::cout << d << ", "; }); std::cout << std::endl;
+		double sum = 0;
+		for_each_in_tuple(eval, [&sum](double d) { sum += d; });
+		std::cout << "-------" << sum << "-------" << std::endl;
+	}
+	{
+		std::cout << tan(sin(cos(x)))(0.23) << std::endl;
+	}
+	{
+		auto g = x / 3.0;
+		auto dg = derivative(g);
 
-	for_each_in_tuple(eval, [](double d) { std::cout << d << ", "; }); std::cout << std::endl;
-	double sum = 0;
-	for_each_in_tuple(eval, [&sum](double d) { sum += d; });
-	std::cout << "-------" << sum << "-------" << std::endl;
+		std::cout << demangle(typeid(g).name()) << std::endl;
+		std::cout << demangle(typeid(dg).name()) << std::endl;
+		std::cout << g(2.0) << " " << dg(2.0) << std::endl;
+	}
+	{
+		auto h = sin(cos(x)*cos(x));
+		auto dh = derivative(h);
 
-	std::cout << tan(sin(cos(x)))(0.23) << std::endl;
+		std::cout << demangle(typeid(h).name()) << std::endl;
+		std::cout << demangle(typeid(dh).name()) << std::endl;
+		std::cout << h(0.5) << " " << dh(0.5) << std::endl;
+	}
+	{
+		auto j2 = sqrt(x*x*x*x - 2);
+		auto dj2 = derivative(j2);
 
-	auto g = x / 3.0;
-	auto dg = derivative(g);
+		std::cout << demangle(typeid(j2).name()) << std::endl;
+		std::cout << demangle(typeid(dj2).name()) << std::endl;
+		std::cout << j2(2) << " " << dj2(2) << std::endl;
+	}
+	{
+		auto k = exp(x*x);
+		auto dk = derivative(k);
 
-	std::cout << demangle(typeid(g).name()) << std::endl;
-	std::cout << demangle(typeid(dg).name()) << std::endl;
-	std::cout << g(2.0) << " " << dg(2.0) << std::endl;
+		std::cout << demangle(typeid(k).name()) << std::endl;
+		std::cout << demangle(typeid(dk).name()) << std::endl;
+		std::cout << k(2.0) << " " << dk(2.0) << std::endl;
+	}
+	{
+		auto m = cbrt(sin(x));
+		auto dm = derivative(m);
+		auto dm2 = derivative(dm);
+		auto dm3 = derivative(dm2);
+		auto dm4 = derivative(dm3);
+		//auto dm5 = derivative(dm4);
 
-	auto h = sin(cos(x)*cos(x));
-	auto dh = derivative(h);
+		std::cout << demangle(typeid(m).name()) << std::endl;
+		std::cout << demangle(typeid(dm).name()) << std::endl;
+		std::cout << demangle(typeid(dm2).name()) << std::endl;
+		std::cout << demangle(typeid(dm3).name()) << std::endl;
+		std::cout << m(0.5) << " " << dm(0.5) << " " << dm2(0.5) << " " << dm3(0.5) << " " << dm4(0.5) << std::endl;
+	}
+	{
+		auto n = -x*x;
+		auto dn = derivative(n);
+		auto dn2 = derivative(dn);
+		auto dn3 = derivative(dn2);
+		auto dn4 = derivative(dn3);
+		auto dn5 = derivative(dn4);
 
-	std::cout << demangle(typeid(h).name()) << std::endl;
-	std::cout << demangle(typeid(dh).name()) << std::endl;
-	std::cout << h(0.5) << " " << dh(0.5) << std::endl;
+		auto const vn = n(0.5);
+		auto const vdn = dn(0.5);
+		auto const vdn2 = dn2(0.5);
+		auto const vdn3 = dn3(0.5);
+		auto const vdn4 = dn4(0.5);
+		auto const vdn5 = dn5(0.5);
 
-	auto j2 = sqrt(x*x*x*x - 2);
-	auto dj2 = derivative(j2);
+		std::cout << vn << " ";
+		std::cout << vdn << " ";
+		std::cout << vdn2 << " ";
+		std::cout << vdn3 << " ";
+		std::cout << vdn4 << " ";
+		std::cout << vdn5 << " " << std::endl;
 
-	std::cout << demangle(typeid(j2).name()) << std::endl;
-	std::cout << demangle(typeid(dj2).name()) << std::endl;
-	std::cout << j2(2) << " " << dj2(2) << std::endl;
+		std::cout << demangle(typeid(n).name()) << std::endl;
+		std::cout << demangle(typeid(dn).name()) << std::endl;
+		std::cout << demangle(typeid(dn2).name()) << std::endl;
+		std::cout << demangle(typeid(dn3).name()) << std::endl;
+	}
+	{
+		auto p = x + x;
+		auto dp = aks::derivative(p);
+		auto dp2 = aks::derivative(dp);
+		auto dp3 = aks::derivative(dp2);
 
-	auto k = exp(x*x);
-	auto dk = derivative(k);
+		auto vp = p(2);
+		auto vdp = dp(2);
+		auto vdp2 = dp2(2);
+		auto vdp3 = dp3(2);
 
-	std::cout << demangle(typeid(k).name()) << std::endl;
-	std::cout << demangle(typeid(dk).name()) << std::endl;
-	std::cout << k(2.0) << " " << dk(2.0) << std::endl;
+		std::cout << vp	  << " ";
+		std::cout << vdp  << " ";
+		std::cout << vdp2 << " ";
+		std::cout << vdp3 << " " << std::endl;
 
-	auto m = cbrt(sin(x));
-	auto dm = derivative(m);
-	auto dm2 = derivative(dm);
-	auto dm3 = derivative(dm2);
-	auto dm4 = derivative(dm3);
-	//auto dm5 = derivative(dm4);
+		std::cout << demangle(typeid(p).name()) << std::endl;
+		std::cout << demangle(typeid(dp).name()) << std::endl;
+		std::cout << demangle(typeid(dp2).name()) << std::endl;
+		std::cout << demangle(typeid(dp3).name()) << std::endl;
+	}
+	{
+		auto a0 = sin(x);
+		auto a1 = differentiate(a0, x);
+		auto a2 = differentiate(a1, x);
+		auto a3 = differentiate(a2, x);
+		auto a4 = differentiate(a3, x);
+		auto a5 = differentiate(a4, x);
+		auto a6 = differentiate(a5, x);
+		auto a7 = differentiate(a6, x);
+		auto a8 = differentiate(a7, x);
+		auto a9 = differentiate(a8, x);
+		auto a10 = differentiate(a9, x);
+		auto a11 = differentiate(a10, x);
+		//auto a12 = derivative(a11);
 
-	std::cout << demangle(typeid(m).name()) << std::endl;
-	std::cout << demangle(typeid(dm).name()) << std::endl;
-	std::cout << demangle(typeid(dm2).name()) << std::endl;
-	std::cout << demangle(typeid(dm3).name()) << std::endl;
-	std::cout << m(0.5) << " " << dm(0.5) << " " << dm2(0.5) << " " << dm3(0.5) << " " << dm4(0.5) << std::endl;
+		std::cout << demangle(typeid(a0).name()) << std::endl;
+		std::cout << demangle(typeid(a1).name()) << std::endl;
+		std::cout << demangle(typeid(a2).name()) << std::endl;
+		std::cout << demangle(typeid(a3).name()) << std::endl;
+		std::cout << demangle(typeid(a4).name()) << std::endl;
+		std::cout << demangle(typeid(a5).name()) << std::endl;
+		std::cout << demangle(typeid(a6).name()) << std::endl;
+		std::cout << demangle(typeid(a7).name()) << std::endl;
+		std::cout << demangle(typeid(a8).name()) << std::endl;
+		std::cout << demangle(typeid(a9).name()) << std::endl;
+		std::cout << demangle(typeid(a10).name()) << std::endl;
+		std::cout << demangle(typeid(a11).name()) << std::endl;
+		//std::cout << demangle(typeid(a12).name()) << std::endl;
 
-	auto n = -x*x;
-	auto dn = derivative(n);
-	auto dn2 = derivative(dn);
-	auto dn3 = derivative(dn2);
-	auto dn4 = derivative(dn3);
-	auto dn5 = derivative(dn4);
-
-	std::cout << demangle(typeid(n).name()) << std::endl;
-	std::cout << demangle(typeid(dn).name()) << std::endl;
-	std::cout << demangle(typeid(dn2).name()) << std::endl;
-	std::cout << demangle(typeid(dn3).name()) << std::endl;
-	std::cout << n(0.5) << " " << dn(0.5) << " " << dn2(0.5) << " " << dn4(0.5);
-
-	auto p = x + x;
-	auto dp = aks::derivative(p);
-	auto dp2 = aks::derivative(dp);
-	auto dp3 = aks::derivative(dp2);
-
-	std::cout << demangle(typeid(p).name()) << std::endl;
-	std::cout << demangle(typeid(dp).name()) << std::endl;
-	std::cout << demangle(typeid(dp2).name()) << std::endl;
-	std::cout << demangle(typeid(dp3).name()) << std::endl;
-	std::cout << p(0.5) << " "
-		<< dp(0.5) << " "
-		<< dp2(0.5) << " "
-		<< dp3(0.5) << std::endl;
-
-	auto a0 = sin(x);
-	auto a1 = differentiate(a0, x);
-	auto a2 = differentiate(a1, x);
-	auto a3 = differentiate(a2, x);
-	auto a4 = differentiate(a3, x);
-	auto a5 = differentiate(a4, x);
-	auto a6 = differentiate(a5, x);
-	auto a7 = differentiate(a6, x);
-	auto a8 = differentiate(a7, x);
-	auto a9 = differentiate(a8, x);
-	auto a10 = differentiate(a9, x);
-	auto a11 = differentiate(a10, x);
-	//auto a12 = derivative(a11);
-	
-	std::cout << demangle(typeid(a0).name()) << std::endl;
-	std::cout << demangle(typeid(a1).name()) << std::endl;
-	std::cout << demangle(typeid(a2).name()) << std::endl;
-	std::cout << demangle(typeid(a3).name()) << std::endl;
-	std::cout << demangle(typeid(a4).name()) << std::endl;
-	std::cout << demangle(typeid(a5).name()) << std::endl;
-	std::cout << demangle(typeid(a6).name()) << std::endl;
-	std::cout << demangle(typeid(a7).name()) << std::endl;
-	std::cout << demangle(typeid(a8).name()) << std::endl;
-	std::cout << demangle(typeid(a9).name()) << std::endl;
-	std::cout << demangle(typeid(a10).name()) << std::endl;
-	std::cout << demangle(typeid(a11).name()) << std::endl;
-	//std::cout << demangle(typeid(a12).name()) << std::endl;
-
-	auto b0 = sqrt(x*y);
-	auto b1 = differentiate(b0, y);
-	std::cout << b0(20, 20) << " " << b1(20, 20) << std::endl;
+		auto const pi_by_2 = 3.1415926535897932384626433 / 2.0;
+		std::cout << a0(pi_by_2) << std::endl;
+		std::cout << a1(pi_by_2) << std::endl;
+		std::cout << a2(pi_by_2) << std::endl;
+		std::cout << a3(pi_by_2) << std::endl;
+		std::cout << a4(pi_by_2) << std::endl;
+		std::cout << a5(pi_by_2) << std::endl;
+		std::cout << a6(pi_by_2) << std::endl;
+		std::cout << a7(pi_by_2) << std::endl;
+		std::cout << a8(pi_by_2) << std::endl;
+		std::cout << a9(pi_by_2) << std::endl;
+		std::cout << a10(pi_by_2) << std::endl;
+		std::cout << a11(pi_by_2) << std::endl;
+	}
+	{
+		auto b0 = sqrt(x*y);
+		auto b1 = differentiate(b0, y);
+		std::cout << b0(20, 20) << " " << b1(20, 20) << std::endl;
+	}
 	return 0;
 }
