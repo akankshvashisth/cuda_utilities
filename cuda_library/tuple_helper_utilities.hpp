@@ -121,7 +121,7 @@ namespace aks
 		template<typename T, typename... Ts, size_t... Is, typename Op>
 		T reduce_impl(std::tuple<T, Ts...>const& t, index_sequence<Is...>, Op)
 		{
-			return reduce<Op>::apply(std::get<Is>(t)...);
+			return variadic_arg_helpers::reduce<Op>::apply(std::get<Is>(t)...);
 		}
 
 		template<typename T, typename... Ts, typename Op>

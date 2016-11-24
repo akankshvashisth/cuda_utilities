@@ -12,6 +12,7 @@
 //#include <cxxabi.h>
 
 #include "compile_time_differentiation.hpp"
+#include "tuple_helper_utilities.hpp"
 
 std::string demangle(const char* name) {
 
@@ -203,6 +204,50 @@ constexpr size_t get_number_of_variables(std::tuple<Ts...>)
 	return std::tuple_size< type >::value;
 }
 
+template<typename F>
+constexpr auto gradient(F f)
+{
+	return std::get<0>(jacobian(f));
+}
+
+template<typename... Ts, size_t... Is, typename... As>
+auto value_gradient_at_internal(std::tuple<Ts...> const& t, sz_seq<Is...>, As... as)
+{	
+	return std::make_tuple(std::get<Is>(t)(as...)...);
+}
+
+template<typename... Ts, typename... As>
+auto value_gradient_at(std::tuple<Ts...> const& t, As... as)
+{		
+	return value_gradient_at_internal(t, sz_gen_seq<sizeof...(Ts)>(), as...);
+}
+
+template<size_t I, typename T, typename R>
+auto set_value_to(T t, R& r)
+{
+	r[I] = t;
+	return t;
+}
+
+template<typename... Ts, size_t... Is, typename R, typename... As>
+auto value_gradient_at_in_res(std::tuple<Ts...> const& t, sz_seq<Is...>, R& res, As... as)
+{	
+	eat_up(
+		set_value_to<Is>(std::get<Is>(t)(as...), res)...
+	);
+}
+
+template<typename... Ts, typename R, typename... As>
+auto value_gradient_at_in_res(std::tuple<Ts...> const& t, R& res, As... as)
+{
+	value_gradient_at_in_res(t, sz_gen_seq<sizeof...(Ts)>(), res, as...);
+	/*auto it = res.begin();
+	auto apply = [&](auto f) { 
+		*it = f(as...);
+		return *it++; 
+	};
+	return aks::tuple_utils::for_each(t, apply);*/
+}
 
 #include <string>
 
@@ -327,6 +372,22 @@ int compile_time_differentiation_tests()
 			});
 			std::cout << std::endl;
 		});
+	}
+	{
+		auto j = jacobian(2*x + 3*y + 4*z);
+		auto k = gradient(2 * x + 3 * y + 4 * z);
+		auto m = value_gradient_at(k, 1, 1, 1);
+		std::vector<int> res2(3);
+		value_gradient_at_in_res(k, res2, 1, 1, 1);
+		std::vector<std::vector<double>> res(get_number_of_function(j), std::vector<double>(get_number_of_variables(j), 0.0));
+		value_jacobian_at(j, res, 1,1,1);
+		std::for_each(res.cbegin(), res.cend(), [](std::vector<double> const& v) {
+			std::for_each(v.cbegin(), v.cend(), [](double const& d) {
+				std::cout << d << "\t";
+			});
+			std::cout << std::endl;
+		});
+		std::cout << std::endl;
 	}
 	/////////////////////////////
 

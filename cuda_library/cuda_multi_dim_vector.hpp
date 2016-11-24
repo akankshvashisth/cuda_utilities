@@ -82,7 +82,7 @@ namespace multi_dim_vector_detail
 	template<typename T, typename... Ts>
 	AKS_FUNCTION_PREFIX_ATTR void product(size_t* data, T t, Ts... ts)
 	{
-		data[0] = aks::reduce<aks::product>::apply(t,ts...);
+		data[0] = aks::variadic_arg_helpers::reduce<aks::variadic_arg_helpers::product>::apply(t,ts...);
 		product(data + 1, ts...);
 	}
 

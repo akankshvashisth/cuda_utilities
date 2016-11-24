@@ -34,13 +34,13 @@ namespace aks
 		typedef multi_dim_vector<const_value_type, dimensions> const_view_type;
 
 		template<typename... Ts>
-		multi_dim_vector_with_memory(Ts... ts) : m_data(reduce<product>::apply(ts...)), m_dimensions(ts...)
+		multi_dim_vector_with_memory(Ts... ts) : m_data(variadic_arg_helpers::reduce<variadic_arg_helpers::product>::apply(ts...)), m_dimensions(ts...)
 		{
 			static_assert(sizeof...(ts) == dimensions, "Incorrect number of arguments");
 		}
 
 		template<typename... Ts>
-		multi_dim_vector_with_memory(value_type* data, Ts... ts) : m_data(reduce<product>::apply(ts...), data), m_dimensions(ts...)
+		multi_dim_vector_with_memory(value_type* data, Ts... ts) : m_data(variadic_arg_helpers::reduce<variadic_arg_helpers::product>::apply(ts...), data), m_dimensions(ts...)
 		{
 			static_assert(sizeof...(ts) == dimensions, "Incorrect number of arguments");
 		}
