@@ -20,20 +20,7 @@
 #include <assert.h>
 
 #include <memory>
-namespace aks
-{
-    template<typename _value_type, size_t _dimensions>
-    struct cuda_multi_dim_vector
-    {
-        typedef _value_type value_type;
-        enum{ dimensions = _dimensions };
-        typedef multi_dim_vector<value_type, dimensions> device_data_type;
-
-
-    private:
-        cuda_pointer<_value_type> m_data;
-    };
-}
+#include "multi_dim_vector.hpp"
 
 cudaError_t addWithCuda(std::vector<int>& c, std::vector<int> const& a, std::vector<int> const& b);
 
@@ -43,24 +30,28 @@ __global__ void addKernel(aks::multi_dim_vector<int, 1> c, aks::multi_dim_vector
     c(i) = a(i) + b(i);
 }
 
-template<typename T, size_t N>
-using host_multi_dim_vector = aks::multi_dim_vector_with_memory<T, N, std::vector<T>>;
-
-template<typename T, size_t N>
-using cuda_multi_dim_vector = aks::multi_dim_vector_with_memory<T, N, aks::cuda_pointer<T>>;
+__global__ void addKernel(aks::multi_dim_vector<int, 3> c, aks::multi_dim_vector<int const, 3> const a, aks::multi_dim_vector<int const, 3>  const b)
+{
+	int const i = threadIdx.x;
+	int const j = threadIdx.y;
+	int const k = threadIdx.z;
+	c(i,j,k) = a(i,j,k) + b(i,j,k);
+}
 
 void check2()
 {
 	compile_time_differentiation_tests();
 	{
-		host_multi_dim_vector<int, 3> vec(3, 4, 5);
+		aks::host_multi_dim_vector<int, 3> vec(3, 4, 5);
 		auto view = vec.view();
 		auto const& const_vec = vec;
 		auto const_view = const_vec.view();
 		printf("");
 	}
+	if(true)
 	{  
-		host_multi_dim_vector<int, 3> host_vec(3, 4, 5);
+		aks::cuda_context ctxt(aks::cuda_device(0));
+		aks::host_multi_dim_vector<int, 3> host_vec(3, 4, 5);
 		auto host_view = host_vec.view();
 		auto m0 = host_view.max_dimension<0>();
 		auto m1 = host_view.max_dimension<1>();
@@ -75,14 +66,29 @@ void check2()
 					host_view(x, y, z) = x*4*5 + y*5 + z;
 				}
 
-		cuda_multi_dim_vector<int, 3> vec(host_vec.view().data(), 3, 4, 5);
-		auto view = vec.view();
-		auto const& const_vec = vec;
-		auto const_view = const_vec.view();
+		aks::cuda_multi_dim_vector<int, 3> vec = aks::to_device(host_vec);// (host_vec.view().data(), 3, 4, 5);
+		aks::cuda_multi_dim_vector<int, 3> res(3, 4, 5);
+		
+		dim3 threadsPerBlock(3, 4, 5);
+		{
+			aks::cuda_sync_context sync_ctxt;
+			addKernel<<< 1, threadsPerBlock >>>(res.view(), vec.cview(), vec.cview());
+		}
 
-		std::vector<int> ret(view.total_size());
-		vec.m_data.load(ret.data());
+		//auto view = vec.view();
+		//auto const& const_vec = vec;
+		//auto const_view = const_vec.view();
 
+		//auto tmp = aks::from_cuda_pointer(vec.m_data);
+
+		//std::vector<int> ret(view.total_size());
+		//vec.m_data.load(ret.data());
+
+		aks::host_multi_dim_vector<int, 3> ret_vec(3, 4, 5);
+		ret_vec << res;
+
+		auto ret_vec2 = aks::to_host(res);
+		
 		printf("");
 	}
 }

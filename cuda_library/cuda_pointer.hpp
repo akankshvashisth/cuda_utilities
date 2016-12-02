@@ -58,10 +58,8 @@ namespace aks
                 other.reset();
             }
             assert(!has_error_occurred());
+			return *this;
         }
-
-		cuda_pointer(cuda_pointer&) = delete;
-		cuda_pointer& operator=(cuda_pointer&) = delete;
 
         template<typename U>
         void deep_copy_from(cuda_pointer<U> const& other)
@@ -77,7 +75,9 @@ namespace aks
         void load(pointer_type data_ptr) const
         {   
             assert(!has_error_occurred());
-            m_status = cuda_monad(m_status, cudaMemcpy, data_ptr, data(), data_size(), cudaMemcpyDeviceToHost);
+			auto dst = (void*)data_ptr;
+			auto src = (void const*)data();
+            m_status = cuda_monad(m_status, cudaMemcpy, dst, src, data_size(), cudaMemcpyDeviceToHost);
             assert(!has_error_occurred());
         }
 
@@ -93,6 +93,9 @@ namespace aks
         }
 
     private:
+		cuda_pointer(cuda_pointer&) = delete;
+		cuda_pointer& operator=(cuda_pointer&) = delete;
+
         void reset()
         {
             cudaFree((void*)m_data);
