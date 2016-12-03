@@ -1,5 +1,6 @@
 #include "experiments.hpp"
-
+#include "multi_dim_vector.hpp"
+#include "multi_dim_vector_iterator.hpp"
 #include <tuple>
 
 template<size_t N, typename F, typename... Ts>
@@ -34,7 +35,32 @@ void show(int x, int y, int z, int w)
 	std::cout << x << y << z << w << std::endl;
 }
 
+
+
+
+
 int run_experiments()
 {
+	aks::host_multi_dim_vector<int, 4> v(2, 3, 4, 5);
+	//aks::func(1, 2, 3, aks::token);
+
+	auto view = v.view();
+	size_t dims[] = { 1,2,3,4 };
+	aks::iterator_detail::get_element(view, dims);// = 23;
+	//printf("%d", view(1, 2, 3, 4));
+
+	auto iter = aks::begin(view, aks::token(), 2, 3, 4);
+	++iter;
+	auto end = aks::end(view, aks::token(), 2, 3, 4);
+	//*(iter) = 23;
+
+	auto iter2 = aks::begin(view, 1, aks::token(), 3, 4);
+	++iter2;
+	auto end2 = aks::end(view, 1, aks::token(), 3, 4);
+	*(iter2) = 23;
+
+	for (auto it = aks::begin(view, 0, aks::token(), 2, 3), end = aks::end(view, 0, aks::token(), 2, 3); it != end; ++it)
+		(*it) = 53;
+
 	return 0;
 }

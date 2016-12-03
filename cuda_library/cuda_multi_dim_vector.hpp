@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <cassert>
+#include <type_traits>
 
 #include "defines.hpp"
 #include "variadic_arg_helpers.hpp"
@@ -14,7 +15,7 @@ namespace aks
 
 	namespace multi_dim_vector_detail
 	{
-		AKS_FUNCTION_PREFIX_ATTR size_t multiply(size_t const * begin, size_t const* end)
+		AKS_FUNCTION_PREFIX_ATTR inline size_t multiply(size_t const * begin, size_t const* end)
 		{
 			size_t ret = 1;
 			for (auto it = begin; it != end; ++it)
@@ -62,7 +63,7 @@ namespace aks
 			return ret;
 		}
 
-		AKS_FUNCTION_PREFIX_ATTR void copy(size_t* /*data*/)
+		AKS_FUNCTION_PREFIX_ATTR inline void copy(size_t* /*data*/)
 		{
 
 		}
@@ -74,7 +75,7 @@ namespace aks
 			copy(data + 1, ts...);
 		}
 
-		AKS_FUNCTION_PREFIX_ATTR void product(size_t* /*data*/)
+		AKS_FUNCTION_PREFIX_ATTR inline void product(size_t* /*data*/)
 		{
 
 		}
@@ -112,6 +113,7 @@ namespace aks
 	struct multi_dim_vector
 	{
 		typedef _value_type value_type;
+		typedef value_type const const_value_type;
 		typedef value_type& reference;
 		typedef value_type const& const_reference;
 		typedef value_type* iterator;
@@ -125,9 +127,17 @@ namespace aks
 		template<typename... Ds>
 		AKS_FUNCTION_PREFIX_ATTR multi_dim_vector(pointer data, Ds... dims) : m_data(data), m_products()
 		{
+			static_assert(dimensions == sizeof...(dims), "incorrect number of arguments provided");
 			multi_dim_vector_detail::product(m_products, dims...);
 		}
 
+		template<typename T>
+		AKS_FUNCTION_PREFIX_ATTR multi_dim_vector(multi_dim_vector<T, dimensions> const& other) : m_data(other.m_data), m_products()
+		{
+			for (size_t i = 0; i < dimensions; ++i)
+				m_products[i] = other.m_products[i];
+		}
+	
 		template<typename... Ds>
 		AKS_FUNCTION_PREFIX_ATTR reference operator()(Ds... idxs) { return data()[index(idxs...)]; }
 
@@ -156,6 +166,26 @@ namespace aks
 			static_assert(N < dimensions, "Index is more than dimensions");
 			return multi_dim_vector_detail::max_dimension<dimensions - N>::template apply<N>(m_products);
 		}
+
+		template<typename T>	
+		AKS_FUNCTION_PREFIX_ATTR bool operator==(multi_dim_vector<T, dimensions> const& other) const
+		{
+			if (this->data() != other.data())
+				return false;
+			
+			for (size_t i = 0; i < dimensions; ++i)
+				if (this->m_products[i] != other.m_products[i])
+					return false;
+
+			return true;
+		}
+
+		template<typename T>
+		AKS_FUNCTION_PREFIX_ATTR bool operator!=(multi_dim_vector<T, dimensions> const& other) const
+		{
+			return !(*this == other);
+		}
+
 	private:
 		template<typename... Ds>
 		AKS_FUNCTION_PREFIX_ATTR size_type index(size_type idx, Ds... idxs) const
@@ -165,6 +195,9 @@ namespace aks
 
 		pointer m_data;
 		size_type m_products[dimensions];
+
+		template<typename T, std::size_t D>
+		friend struct multi_dim_vector;
 	};
 
 	template<size_t X, typename T, size_t N>

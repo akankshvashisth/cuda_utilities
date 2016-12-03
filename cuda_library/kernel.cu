@@ -21,6 +21,7 @@
 
 #include <memory>
 #include "multi_dim_vector.hpp"
+#include "multi_dim_vector_iterator.hpp"
 
 cudaError_t addWithCuda(std::vector<int>& c, std::vector<int> const& a, std::vector<int> const& b);
 
@@ -30,12 +31,17 @@ __global__ void addKernel(aks::multi_dim_vector<int, 1> c, aks::multi_dim_vector
     c(i) = a(i) + b(i);
 }
 
-__global__ void addKernel(aks::multi_dim_vector<int, 3> c, aks::multi_dim_vector<int const, 3> const a, aks::multi_dim_vector<int const, 3>  const b)
+__global__ void addKernel(aks::multi_dim_vector<int, 3> c, aks::multi_dim_vector<int const, 3> const a, aks::multi_dim_vector<int const, 3> const b)
 {
 	int const i = threadIdx.x;
 	int const j = threadIdx.y;
 	int const k = threadIdx.z;
-	c(i,j,k) = a(i,j,k) + b(i,j,k);
+
+	int sum = 0;
+	for (auto it = aks::begin(a, i, aks::token(), k), end = aks::end(a, i, aks::token(), k); it != end; ++it)
+		sum += *it;
+
+	c(i,j,k) = sum + b(i,j,k);
 }
 
 void check2()
@@ -72,7 +78,7 @@ void check2()
 		dim3 threadsPerBlock(3, 4, 5);
 		{
 			aks::cuda_sync_context sync_ctxt;
-			addKernel<<< 1, threadsPerBlock >>>(res.view(), vec.cview(), vec.cview());
+			addKernel<<< 1, threadsPerBlock >>>(res.view(), vec.view(), vec.cview());
 		}
 
 		//auto view = vec.view();
