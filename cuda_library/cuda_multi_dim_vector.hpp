@@ -198,6 +198,12 @@ namespace aks
 
 		template<typename T, std::size_t D>
 		friend struct multi_dim_vector;
+
+		template<typename T>
+		friend struct multi_dim_iterator;
+
+		template<typename T>
+		friend struct const_multi_dim_iterator;
 	};
 
 	template<size_t X, typename T, size_t N>

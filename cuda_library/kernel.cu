@@ -28,7 +28,12 @@ cudaError_t addWithCuda(std::vector<int>& c, std::vector<int> const& a, std::vec
 __global__ void addKernel(aks::multi_dim_vector<int, 1> c, aks::multi_dim_vector<int const, 1> a, aks::multi_dim_vector<int const, 1> b)
 {
     int i = threadIdx.x;
-    c(i) = a(i) + b(i);
+	int sum = 0;
+	for (auto it = aks::begin(a, aks::token()), end = aks::end(a, aks::token()); it != end; ++it)
+		sum += *it;
+	for (auto it = aks::begin(b, aks::token()), end = aks::end(b, aks::token()); it != end; ++it)
+		sum += *it;
+    c(i) = sum + a(i) + b(i);
 }
 
 __global__ void addKernel(aks::multi_dim_vector<int, 3> c, aks::multi_dim_vector<int const, 3> const a, aks::multi_dim_vector<int const, 3> const b)
@@ -45,7 +50,7 @@ __global__ void addKernel(aks::multi_dim_vector<int, 3> c, aks::multi_dim_vector
 	for (auto it = aks::begin(b, i, j, aks::token()), end = aks::end(b, i, j, aks::token()); it != end; ++it)
 		sum += *it;
 
-	c(i,j,k) = sum + b(i,j,k);
+	c(i, j, k) = sum;
 }
 
 void check2()
