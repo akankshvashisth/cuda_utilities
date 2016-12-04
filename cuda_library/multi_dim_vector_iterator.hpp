@@ -42,7 +42,7 @@ namespace aks
 		template <typename A, typename B>
 		struct index_of<A, B>
 		{
-			enum { value = std::is_same<A, B>::value ? 0 : 20000 };
+			enum { value = std::is_same<A, B>::value ? 0 : 200000 /*some very large number*/ };
 		};
 	}
 
