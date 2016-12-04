@@ -22,6 +22,7 @@
 #include <memory>
 #include "multi_dim_vector.hpp"
 #include "multi_dim_vector_iterator.hpp"
+#include "multi_dim_vector_range.hpp"
 
 cudaError_t addWithCuda(std::vector<int>& c, std::vector<int> const& a, std::vector<int> const& b);
 
@@ -31,9 +32,9 @@ __global__ void addKernel(aks::multi_dim_vector<int, 1> c, aks::multi_dim_vector
 	int sum = 0;
 	for (auto it = aks::begin(a, aks::token()), end = aks::end(a, aks::token()); it != end; ++it)
 		sum += *it;
-	for (auto it = aks::begin(b, aks::token()), end = aks::end(b, aks::token()); it != end; ++it)
-		sum += *it;
-    c(i) = sum + a(i) + b(i);
+	for (auto const& x : aks::make_multi_dim_vector_range(b, aks::token()))
+		sum += x;
+    c(i) = a(i) + b(i) - sum;
 }
 
 __global__ void addKernel(aks::multi_dim_vector<int, 3> c, aks::multi_dim_vector<int const, 3> const a, aks::multi_dim_vector<int const, 3> const b)
@@ -47,8 +48,8 @@ __global__ void addKernel(aks::multi_dim_vector<int, 3> c, aks::multi_dim_vector
 		sum += *it;
 	for (auto it = aks::begin(a, i, aks::token(), k), end = aks::end(a, i, aks::token(), k); it != end; ++it)
 		sum += *it;
-	for (auto it = aks::begin(b, i, j, aks::token()), end = aks::end(b, i, j, aks::token()); it != end; ++it)
-		sum += *it;
+	for (auto const& x : aks::make_multi_dim_vector_range(b, i, j, aks::token()))
+		sum += x;
 
 	c(i, j, k) = sum;
 }
@@ -188,6 +189,8 @@ cudaError_t addWithCuda(std::vector<int>& c, std::vector<int> const& a, std::vec
         aks::cuda_sync_context sync_ctxt;
         addKernel <<<1, a.size()>>>(mc, ma, mb);
     }
+
+	c = aks::from_cuda_pointer(dc);
 
     //thrust::device_vector<int> const tva = aks::to_thrust_device_vector(ma);
     //thrust::device_vector<int> const tvb = aks::to_thrust_device_vector(mb);

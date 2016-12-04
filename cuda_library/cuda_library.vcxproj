@@ -177,6 +177,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <ClInclude Include="experiments.hpp" />
     <ClInclude Include="multi_dim_vector.hpp" />
     <ClInclude Include="multi_dim_vector_iterator.hpp" />
+    <ClInclude Include="multi_dim_vector_range.hpp" />
     <ClInclude Include="multi_dim_vector_with_memory.hpp" />
     <ClInclude Include="tuple_helper_utilities.hpp" />
     <ClInclude Include="variadic_arg_helpers.hpp" />

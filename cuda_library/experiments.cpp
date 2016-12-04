@@ -1,6 +1,7 @@
 #include "experiments.hpp"
 #include "multi_dim_vector.hpp"
 #include "multi_dim_vector_iterator.hpp"
+#include "multi_dim_vector_range.hpp"
 #include <tuple>
 
 template<size_t N, typename F, typename... Ts>
@@ -45,8 +46,8 @@ void addKernel3(aks::multi_dim_vector<int, 3> c, aks::multi_dim_vector<int const
 					sum += *it;
 				for (auto it = aks::begin(a, i, aks::token(), k), end = aks::end(a, i, aks::token(), k); it != end; ++it)
 					sum += *it;
-				for (auto it = aks::begin(b, i, j, aks::token()), end = aks::end(b, i, j, aks::token()); it != end; ++it)
-					sum += *it;
+				for (auto const& x : aks::make_multi_dim_vector_range(b, i, j, aks::token()))
+					sum += x;
 
 				c(i, j, k) = sum;
 			}
@@ -58,11 +59,18 @@ size_t index_find(As...)
 	return aks::iterator_detail::index_of<aks::token, As...>::value;
 }
 
+
+
 int run_experiments()
 {
 	{
 		aks::host_multi_dim_vector<int, 1> host_vec(10);
 		auto view = host_vec.view();
+
+		for (auto const& x : view)
+		{
+			printf("%d\n", x);
+		}
 		
 		printf("%zd\n", index_find(aks::token()));
 		printf("%zd\n", index_find(2,2,aks::token()));
@@ -72,6 +80,14 @@ int run_experiments()
 		auto const cview = view;
 		for (auto it = aks::begin(cview, aks::token()), end = aks::end(cview, aks::token()); it != end; ++it)
 			printf("%d, ", *it);
+		for (auto& x : aks::make_multi_dim_vector_range(view, aks::token()) )
+		{
+			printf("%d, ", x);
+		}
+		for (auto& x : aks::make_multi_dim_vector_range(cview, aks::token()))
+		{
+			printf("%d, ", x);
+		}
 		printf("\n");
 	}
 
@@ -125,6 +141,10 @@ int run_experiments()
 			auto cit = aks::begin(cview, aks::token(), 2, 3, 4);
 			auto end = aks::end(view, aks::token(), 2, 3, 4);
 			auto cend = aks::end(cview, aks::token(), 2, 3, 4);
+			auto rng = aks::make_multi_dim_vector_range_from_iterators(it, end);
+			auto rng2 = aks::make_multi_dim_vector_range_from_iterators(cit, cend);
+			for (auto& x : rng) { x = 23; }
+			//for (auto& x : rng2) { x = 23; }
 			auto b0 = it != it;
 			auto b1 = cit != cit;
 			auto b2 = it != cit;
