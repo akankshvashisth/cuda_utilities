@@ -282,7 +282,7 @@ auto newton_raphson(F f, T guess, T tolerance, int max_counter)
 	{
 		guess = guess - val / aks::derivative(f)(guess);
 		val = f(guess);
-		std::cout << max_counter << " " << guess << " " << val << std::endl;
+		//std::cout << max_counter << " " << guess << " " << val << std::endl;
 	}
 	
 	return std::make_tuple(guess, !is_abs_greater_than(val, tolerance));
@@ -431,13 +431,9 @@ int compile_time_differentiation_tests()
 	std::cout << get_dim(exp(sin(x) ^ cos(y)*z)) << std::endl;
 	{
 		auto eq = sin(x) - 1;
-		auto guess = 1.2;
 		double root;
 		bool converged;
-		std::tie(root, converged) = newton_raphson(eq, guess, 1e-13, 20);
-
-		
-
+		std::tie(root, converged) = newton_raphson(eq, 1.2/*guess*/, 1e-13/*tolerance*/, 20/*max iterations*/);
 		auto pi_by_what = [pi](auto x) { return pi / x; };
 		std::cout << root << " " << to_string(converged) << " "<< eq(root) << " pi/" << pi_by_what(root) << std::endl;
 	}

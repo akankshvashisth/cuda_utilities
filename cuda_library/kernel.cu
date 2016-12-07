@@ -30,7 +30,7 @@ __global__ void addKernel(aks::multi_dim_vector<int, 1> c, aks::multi_dim_vector
 {
     int i = threadIdx.x;
 	int sum = 0;
-	for (auto it = aks::begin(a, aks::token()), end = aks::end(a, aks::token()); it != end; ++it)
+	for (auto it = aks::begin(a, aks::token(5)), end = aks::end(a, aks::token(5)); it != end; ++it)
 		sum += *it;
 	for (auto const& x : aks::make_multi_dim_vector_range(b, aks::token()))
 		sum += x;

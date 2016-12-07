@@ -44,11 +44,35 @@ namespace aks
 		{
 			enum { value = std::is_same<A, B>::value ? 0 : 200000 /*some very large number*/ };
 		};
+
+		template<size_t N>
+		struct get_arg
+		{
+			template<typename A, typename... As>
+			AKS_FUNCTION_PREFIX_ATTR static auto apply(A a, As... as)
+			{
+				return get_arg<N - 1>::apply(as...);
+			}
+		};
+
+		template<>
+		struct get_arg<0>
+		{
+			template<typename A, typename... As>
+			AKS_FUNCTION_PREFIX_ATTR static auto apply(A a, As... as)
+			{
+				return a;
+			}
+		};
+
 	}
 
 	struct token
 	{
-		AKS_FUNCTION_PREFIX_ATTR operator std::size_t() { return 0; }
+		AKS_FUNCTION_PREFIX_ATTR token() : m_idx(0) {}
+		AKS_FUNCTION_PREFIX_ATTR token(size_t idx) : m_idx(idx) {}
+		AKS_FUNCTION_PREFIX_ATTR operator std::size_t() { return m_idx; }
+		size_t m_idx;
 	};
 
 	template<typename _value_type>
@@ -124,7 +148,7 @@ namespace aks
 	AKS_FUNCTION_PREFIX_ATTR auto end(multi_dim_vector<value_type, dimensions>& view, args... as)
 	{
 		static_assert(dimensions == sizeof...(as), "mismatch");
-		return begin(view, as...) += get_max_dim<iterator_detail::index_of<token, args...>::value>(view);
+		return begin(view, as...) += get_max_dim<iterator_detail::index_of<token, args...>::value>(view) - size_t(iterator_detail::get_arg<iterator_detail::index_of<token, args...>::value>::apply(as...));
 	}
 
 	template<typename value_type, size_t dimensions, typename... args>
@@ -139,7 +163,7 @@ namespace aks
 	AKS_FUNCTION_PREFIX_ATTR auto end(multi_dim_vector<value_type, dimensions> const& view, args... as)
 	{
 		static_assert(dimensions == sizeof...(as), "mismatch");
-		return begin(view, as...) += get_max_dim<iterator_detail::index_of<token, args...>::value>(view);
+		return begin(view, as...) += get_max_dim<iterator_detail::index_of<token, args...>::value>(view) - size_t(iterator_detail::get_arg<iterator_detail::index_of<token, args...>::value>::apply(as...));
 	}
 
 	template<typename value_type>

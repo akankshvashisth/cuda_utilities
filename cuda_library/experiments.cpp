@@ -75,12 +75,12 @@ int run_experiments()
 		printf("%zd\n", index_find(aks::token()));
 		printf("%zd\n", index_find(2,2,aks::token()));
 		printf("%zd\n", index_find(2, 2, aks::token(),3,4));
-		for (auto it = aks::begin(view, aks::token()), end = aks::end(view, aks::token()); it != end; ++it)
+		for (auto it = aks::begin(view, aks::token(5)), end = aks::end(view, aks::token(5)); it != end; ++it)
 			*it = 23;
 		auto const cview = view;
 		for (auto it = aks::begin(cview, aks::token()), end = aks::end(cview, aks::token()); it != end; ++it)
 			printf("%d, ", *it);
-		for (auto& x : aks::make_multi_dim_vector_range(view, aks::token()) )
+		for (auto& x : aks::make_multi_dim_vector_range(view, aks::token(10)) )
 		{
 			printf("%d, ", x);
 		}
