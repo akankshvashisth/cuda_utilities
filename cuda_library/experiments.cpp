@@ -53,16 +53,176 @@ void addKernel3(aks::multi_dim_vector<int, 3> c, aks::multi_dim_vector<int const
 			}
 }
 
+template<size_t _dimensions>
+struct multi_dim_counter
+{
+	enum{dimensions = _dimensions};
+	multi_dim_counter(
+		  bool * const varying_dimensions
+		, size_t * const current
+		, size_t * const maximums
+	) {
+		auto copy_over = [](auto const * from, auto* to) {
+			for (size_t i = 0; i < dimensions; ++i)
+				to[i] = from[i];
+		};
+		copy_over(varying_dimensions, m_varying_dimensions);
+		copy_over(current, m_current);
+		copy_over(maximums, m_maximums);
+	}
+
+	size_t const * current() const {
+		return m_current;
+	}
+
+	void increment() {
+		for (int i = dimensions-1; i >= int(0); --i) {
+			if (m_varying_dimensions[i]) {
+				++m_current[i];
+				if (m_current[i] == m_maximums[i]) {
+					m_current[i] = 0;
+				} else {
+					break;
+				}
+			}
+		}
+	}
+
+	bool m_varying_dimensions[dimensions];
+	size_t m_current[dimensions];
+	size_t m_maximums[dimensions];
+};
+
+template<size_t dimensions>
+std::ostream& operator<<(std::ostream& o, multi_dim_counter<dimensions> const& c)
+{
+	auto print = [&](auto const* x){
+		o << '{';
+		o << x[0];
+		for (size_t i = 1; i < dimensions; ++i) {
+			o << ", " << x[i];
+		}
+		o << '}';
+	};
+
+	print(c.m_current);
+	return o;
+}
+
 template<typename... As>
 size_t index_find(As...)
 {
 	return aks::iterator_detail::index_of<aks::token, As...>::value;
 }
 
+template<typename... args>
+auto make_counter(args... as)
+{
+
+}
+
+#include <type_traits>
+
+struct token {};
+
+template<typename T, typename... Ts>
+struct count_tokens
+{
+	enum { value = (std::is_same<T, token>::value ? 1 : 0) + count_tokens<Ts...>::value };
+};
+
+template<typename T>
+struct count_tokens<T>
+{
+	enum { value = std::is_same<T, token>::value ? 1 : 0 };
+};
+
+template<size_t C, size_t... Is>
+struct dummy
+{
+	static void apply()
+	{
+		printf("");
+	}
+};
+
+template<typename... Ts>
+void something(Ts... ts)
+{
+	dummy<count_tokens<Ts...>::value, std::is_same<Ts, token>::value...>::apply();
+}
+
+template<size_t C, size_t I, size_t... Is>
+struct token_idx
+{
+	static_assert(sizeof...(Is) > 0, "Miscounted?");
+	enum { value = 1 + token_idx<C - I, Is...>::value };
+};
+
+template<size_t... Is>
+struct token_idx<0, 1, Is...>
+{
+	enum { value = 0 };
+};
+
+template<size_t N, size_t... Is>
+struct MovingIndices
+{
+	static void apply()
+	{
+		printf("");
+	}
+};
+
+template<size_t N, size_t... Ts, size_t... Is>
+auto moving_impl(std::index_sequence<Is...>)
+{
+	return MovingIndices<N, token_idx<Is, Ts...>::value...>();
+}
+
+template<typename... Ts>
+auto moving(Ts... ts)
+{
+	return moving_impl<sizeof...(Ts), std::is_same<Ts, token>::value...>(std::make_index_sequence<count_tokens<Ts...>::value>());
+}
+
+int exp_01()
+{
+	auto ct = count_tokens<int, token, token, int, token>::value;
+	auto ct2 = token_idx<0, 0, 0, 0, 0, 1>::value;
+	auto ct22 = token_idx<0, 1>::value;
+	auto ct3 = token_idx<1, 0, 1, 1, 0, 1>::value;
+	auto ct4 = token_idx<2, 0, 1, 1, 0, 1>::value;
+	auto ct5 = token_idx<0, 0, 1, 1, 0, 1, 0, 1, 1, 0>::value;
+	auto ct6 = token_idx<1, 0, 1, 1, 0, 1, 0, 1, 1, 0>::value;
+	auto ct7 = token_idx<2, 0, 1, 1, 0, 1, 0, 1, 1, 0>::value;
+	auto ct8 = token_idx<3, 0, 1, 1, 0, 1, 0, 1, 1, 0>::value;
+	auto ct9 = token_idx<4, 0, 1, 1, 0, 1, 0, 1, 1, 0>::value;
+	//auto ct10 = token_idx<5, 0, 1, 1, 0, 1, 0, 1, 1, 0>::value;
+
+
+	something(2, token(), 2, token(), token(), 3.0);
+	auto m = moving(2, token(), token(), token(), 1.0, token(), 3.0);
+
+	return 0;
+}
 
 
 int run_experiments()
 {
+	exp_01();
+	{
+		size_t current[4] = { 0,3,2,0 };
+		size_t max[4] = { 4,4,4,4 };
+		bool vars[4] = { 0,1,1,0 };
+		multi_dim_counter<4> counter(vars, current, max);
+		for (size_t i = 0; i < 80; ++i)
+		{
+			std::cout << counter << std::endl;
+			counter.increment();
+		}
+	}
+
 	{
 		aks::host_multi_dim_vector<int, 1> host_vec(10);
 		auto view = host_vec.view();
