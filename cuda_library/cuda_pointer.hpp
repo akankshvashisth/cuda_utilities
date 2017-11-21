@@ -45,6 +45,7 @@ namespace aks
 
         cuda_pointer(cuda_pointer&& other) : m_data(other.data()), m_size(other.size()), m_status(other.status())
         {
+            other.m_data = nullptr;
             other.reset();
             assert(!has_error_occurred());
         }

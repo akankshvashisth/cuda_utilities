@@ -161,6 +161,18 @@ auto get_jacobian_element(std::tuple<Ts...> const& t)
 {
 	return std::get<VN>(std::get<FN>(t));
 }
+//
+//template<typename... Fs, size_t... Ns>
+//auto hessian_detail(sz_seq<Ns...>, Fs... fs)
+//{
+//    return std::make_tuple(hessian_detail2(fs, sz_seq<Ns...>())...);
+//}
+//
+//template<typename... Fs>
+//auto hessian(Fs... fs)
+//{
+//
+//}
 
 #include <vector>
 #include <cstddef>
@@ -289,8 +301,44 @@ auto newton_raphson(F f, T guess, T tolerance, int max_counter)
 }
 
 #include <string>
-
 #include <sstream>
+#include <iomanip>
+
+template<typename _Container>
+std::string join(std::string const& delimiter, _Container const& c)
+{
+    if (std::empty(c)) {
+        return std::string();
+    }
+
+    auto begin = std::begin(c);
+    std::stringstream ss;
+    ss << *begin++;
+
+    for (;begin != std::end(c);) {
+        ss << delimiter << *begin++;
+    }
+
+    return ss.str();
+}
+
+template<typename _Container, typename _Func>
+std::string join(std::string const& delimiter, _Container const& c, _Func f)
+{
+    if (std::empty(c)) {
+        return std::string();
+    }
+
+    auto begin = std::begin(c);
+    std::stringstream ss;
+    ss << f(*begin++);
+
+    for (; begin != std::end(c);) {
+        ss << delimiter << f(*begin++);
+    }
+
+    return ss.str();
+}
 
 std::string to_string(bool b) 
 { 
@@ -301,7 +349,7 @@ template<typename T>
 std::string to_string(T const& v)
 {
 	std::stringstream ss;
-	ss << v;
+	ss << std::setfill('0') << std::setw(6) << v;
 	return ss.str();
 }
 
@@ -309,14 +357,7 @@ template<typename T>
 std::string to_string(std::vector<T> const& v) {
 	std::stringstream ss;
 	ss << "{";
-	if (!v.empty())
-	{
-		auto begin = v.cbegin();
-		ss << to_string(*begin++);
-		std::for_each(begin, v.cend(), [&](auto const& d) {
-			ss << ", " << to_string(d);
-		});
-	}
+    ss << join(", ", v, [](T const& t) {return to_string(t); });
 	ss << "}";
 	return ss.str();
 };
@@ -324,14 +365,15 @@ std::string to_string(std::vector<T> const& v) {
 template<typename T>
 std::string to_string(std::vector<std::vector<T>> const& v) {
 	std::stringstream ss;
-	ss << "{";
+	ss << "{\n  ";
 	if (!v.empty())
 	{			
-		auto begin = v.cbegin();
+        ss << join(",\n  ", v, [](std::vector<T> const& t) {return to_string(t); });
+		/*auto begin = v.cbegin();
 		ss << "\n  " << to_string(*begin++);
 		std::for_each(begin, v.cend(), [&](auto const& d) {
 			ss << "\n, " << to_string(d);
-		});
+		});*/
 		ss << "\n";
 	}
 	ss << "}";
@@ -499,6 +541,7 @@ int compile_time_differentiation_tests()
 
 	//std::cout << std::to_string(ds) << "\n"
 	//	<< std::to_string(dds) << "\n"
+    //  << std::to_string(ddds) << "\n"
 	//	<< std::to_string(ddds) << "\n"
 	//	<< std::to_string(dddds) << "\n"
 	//	<< std::to_string(ddddds) << "\n"

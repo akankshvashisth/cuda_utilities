@@ -252,17 +252,17 @@ int run_experiments()
 	}
 
 	{
-		aks::host_multi_dim_vector<int, 3> host_vec(3, 4, 5);
-		auto res_vec = host_vec;
-		auto host_view = host_vec.view();
-		for (size_t x = 0; x < 3; ++x)
-			for (size_t y = 0; y < 4; ++y)
-				for (size_t z = 0; z < 5; ++z)
-				{
-					host_view(x, y, z) = int(x * 4 * 5 + y * 5 + z);
-				}
-		addKernel3(res_vec.view(), host_view, host_view);
-		printf("");
+		//aks::host_multi_dim_vector<int, 3> host_vec(3, 4, 5);
+		//auto res_vec = host_vec;
+		//auto host_view = host_vec.view();
+		//for (size_t x = 0; x < 3; ++x)
+		//	for (size_t y = 0; y < 4; ++y)
+		//		for (size_t z = 0; z < 5; ++z)
+		//		{
+		//			host_view(x, y, z) = int(x * 4 * 5 + y * 5 + z);
+		//		}
+		//addKernel3(res_vec.view(), host_view, host_view);
+		//printf("");
 	}
 
 	{

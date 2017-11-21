@@ -23,8 +23,12 @@
 #include "multi_dim_vector.hpp"
 #include "multi_dim_vector_iterator.hpp"
 #include "multi_dim_vector_range.hpp"
+#include "cuda_blas_manager.hpp"
+#include "cuda_blas_level_1.hpp"
+#include "cuda_blas_level_2.hpp"
 
 cudaError_t addWithCuda(std::vector<int>& c, std::vector<int> const& a, std::vector<int> const& b);
+cudaError_t addWithCuda2(std::vector<int>& c, std::vector<int> const& a, std::vector<int> const& b);
 
 __global__ void addKernel(aks::multi_dim_vector<int, 1> c, aks::multi_dim_vector<int const, 1> a, aks::multi_dim_vector<int const, 1> b)
 {
@@ -109,10 +113,75 @@ void check2()
 	}
 }
 
+
+void blas_checks()
+{
+    
+    using namespace aks;
+    using namespace aks::cuda_blas;
+    cuda_context ctxt(cuda_device(0));
+    cuda_blas_manager blas_mgr;
+
+    std::vector<double> const a = { 1., 2., 3., 4., 50., 8., -9., 23.0 };
+    aks::cuda_multi_dim_vector<double, 1> cuda_vec(a.data(), std::tuple<size_t>(a.size()));    
+    int value = abs_max_index(blas_mgr, cuda_vec);
+    std::cout << a[value] << std::endl;
+    value = abs_min_index(blas_mgr, cuda_vec);
+    std::cout << a[value] << std::endl;
+    double sum = abs_sum(blas_mgr, cuda_vec);
+    std::cout << sum << std::endl;
+    std::vector<double> const b = { 1., -2.,  3. };
+    std::vector<double> const c = { 2.,  2.,  2. };
+    aks::cuda_multi_dim_vector<double, 1> cuda_vecb(b.data(), std::tuple<size_t>(b.size()));
+    aks::cuda_multi_dim_vector<double, 1> cuda_vecc(c.data(), std::tuple<size_t>(c.size()));
+    double dt = dot(blas_mgr, cuda_vecb, cuda_vecc);
+    std::cout << dt << std::endl;
+    std::cout << norm_sq(blas_mgr, cuda_vecb) << std::endl;
+    scale_in_place(blas_mgr, cuda_vecb, 1.5);
+    auto const dev_vecb = to_host(cuda_vecb);
+    for (auto it = dev_vecb.view().cbegin(), end = dev_vecb.view().cend(); it != end; ++it) {
+        std::cout << *it << ",";
+    }
+    std::cout << std::endl;
+    {
+        host_multi_dim_vector<double, 2> Avec(2, 5);
+        host_multi_dim_vector<double, 1> xvec(5);
+        auto A = Avec.view();
+        auto x = xvec.view();
+        A(0, 0) = 1.0;
+        A(0, 1) = 2.0;
+        A(0, 2) = 3.0;
+        A(0, 3) = 4.0;
+        A(0, 4) = 5.0;
+        A(1, 0) = 6.0;
+        A(1, 1) = 7.0;
+        A(1, 2) = 8.0;
+        A(1, 3) = 9.0;
+        A(1, 4) = 10.0;
+        x(0) = 1.5;
+        x(1) = 2.5;
+        x(2) = 3.5;
+        x(3) = 4.5;
+        x(4) = 5.5;
+        auto devA = to_device(Avec);
+        auto devx = to_device(xvec);
+        auto devy(matrix_multiply(blas_mgr, devA, devx));
+        auto yvec = to_host(devy);
+        for (auto it = yvec.view().cbegin(), end = yvec.view().cend(); it != end; ++it) {
+            std::cout << *it << ",";
+        }
+        std::cout << std::endl;
+    }
+}
+
 int main()
 {
+    blas_checks();
+    return 0;
+    //main2();
+    compile_time_differentiation_tests();
 	run_experiments();
-	check2();
+	//check2();
 
     //aks::cuda_context ctxt;
     
@@ -121,7 +190,7 @@ int main()
     std::vector<int> c;
 
     // Add vectors in parallel.
-    cudaError_t cudaStatus = addWithCuda(c, a, b);
+    cudaError_t cudaStatus = addWithCuda2(c, a, b);
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "addWithCuda failed!");
         return 1;
@@ -203,7 +272,7 @@ cudaError_t addWithCuda(std::vector<int>& c, std::vector<int> const& a, std::vec
     printf("%d\n", thrust::reduce(aks::thrust_utils::begin(mc), aks::thrust_utils::end(mc), (int)0));
 
     thrust::transform(aks::thrust_utils::begin(mc), aks::thrust_utils::end(mc), aks::thrust_utils::begin(mc), thrust::negate<int>());
-    thrust::sort(aks::thrust_utils::begin(mc), aks::thrust_utils::end(mc));
+	thrust::sort(aks::thrust_utils::begin(mc), aks::thrust_utils::end(mc));
 
     c = aks::from_cuda_pointer(dc);
 
