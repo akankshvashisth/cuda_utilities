@@ -169,7 +169,9 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <ClInclude Include="compile_time_differentiation_tests.hpp" />
     <ClInclude Include="cuda_blas_level_1.hpp" />
     <ClInclude Include="cuda_blas_level_2.hpp" />
+    <ClInclude Include="cuda_blas_level_3.hpp" />
     <ClInclude Include="cuda_blas_manager.hpp" />
+    <ClInclude Include="cuda_blas_utilities.hpp" />
     <ClInclude Include="cuda_context.hpp" />
     <ClInclude Include="cuda_multi_dim_vector.hpp" />
     <ClInclude Include="cuda_multi_dim_vector_thrust_utils.hpp" />
@@ -187,6 +189,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="compile_time_differentiation_tests.cpp" />
+    <ClCompile Include="cuda_blas_level_3.cpp" />
     <ClCompile Include="experiments.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

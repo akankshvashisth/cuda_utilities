@@ -26,6 +26,7 @@
 #include "cuda_blas_manager.hpp"
 #include "cuda_blas_level_1.hpp"
 #include "cuda_blas_level_2.hpp"
+#include "cuda_blas_level_3.hpp"
 
 cudaError_t addWithCuda(std::vector<int>& c, std::vector<int> const& a, std::vector<int> const& b);
 cudaError_t addWithCuda2(std::vector<int>& c, std::vector<int> const& a, std::vector<int> const& b);
@@ -113,36 +114,48 @@ void check2()
 	}
 }
 
+template<typename T>
+void print2D(T const& y)
+{
+    using namespace aks;
+    for (auto i = 0; i < get_max_dim<0>(y); ++i) {
+        for (auto j = 0; j < get_max_dim<1>(y); ++j) {
+            std::cout << y(i, j) << "\t";
+        }
+        std::cout << std::endl;
+    }
+    std::cout << std::endl;
+}
 
 void blas_checks()
 {
-    
     using namespace aks;
     using namespace aks::cuda_blas;
     cuda_context ctxt(cuda_device(0));
     cuda_blas_manager blas_mgr;
-
-    std::vector<double> const a = { 1., 2., 3., 4., 50., 8., -9., 23.0 };
-    aks::cuda_multi_dim_vector<double, 1> cuda_vec(a.data(), std::tuple<size_t>(a.size()));    
-    int value = abs_max_index(blas_mgr, cuda_vec);
-    std::cout << a[value] << std::endl;
-    value = abs_min_index(blas_mgr, cuda_vec);
-    std::cout << a[value] << std::endl;
-    double sum = abs_sum(blas_mgr, cuda_vec);
-    std::cout << sum << std::endl;
-    std::vector<double> const b = { 1., -2.,  3. };
-    std::vector<double> const c = { 2.,  2.,  2. };
-    aks::cuda_multi_dim_vector<double, 1> cuda_vecb(b.data(), std::tuple<size_t>(b.size()));
-    aks::cuda_multi_dim_vector<double, 1> cuda_vecc(c.data(), std::tuple<size_t>(c.size()));
-    double dt = dot(blas_mgr, cuda_vecb, cuda_vecc);
-    std::cout << dt << std::endl;
-    std::cout << norm_sq(blas_mgr, cuda_vecb) << std::endl;
-    scale_in_place(blas_mgr, cuda_vecb, 1.5);
-    auto const dev_vecb = to_host(cuda_vecb);
-    for (auto it = dev_vecb.view().cbegin(), end = dev_vecb.view().cend(); it != end; ++it) {
-        std::cout << *it << ",";
+    {
+        std::vector<double> const a = { 1., 2., 3., 4., 50., 8., -9., 23.0 };
+        aks::cuda_multi_dim_vector<double, 1> cuda_vec(a.data(), std::tuple<size_t>(a.size()));
+        int value = abs_max_index(blas_mgr, cuda_vec);
+        std::cout << a[value] << std::endl;
+        value = abs_min_index(blas_mgr, cuda_vec);
+        std::cout << a[value] << std::endl;
+        double sum = abs_sum(blas_mgr, cuda_vec);
+        std::cout << sum << std::endl;
+        std::vector<double> const b = { 1., -2.,  3. };
+        std::vector<double> const c = { 2.,  2.,  2. };
+        aks::cuda_multi_dim_vector<double, 1> cuda_vecb(b.data(), std::tuple<size_t>(b.size()));
+        aks::cuda_multi_dim_vector<double, 1> cuda_vecc(c.data(), std::tuple<size_t>(c.size()));
+        double dt = dot(blas_mgr, cuda_vecb, cuda_vecc);
+        std::cout << dt << std::endl;
+        std::cout << norm_sq(blas_mgr, cuda_vecb) << std::endl;
+        scale_in_place(blas_mgr, cuda_vecb, 1.5);
+        auto const dev_vecb = to_host(cuda_vecb);
+        for (auto it = dev_vecb.view().cbegin(), end = dev_vecb.view().cend(); it != end; ++it) {
+            std::cout << *it << ",";
+        }
+        std::cout << std::endl;
     }
-    std::cout << std::endl;
     {
         host_multi_dim_vector<double, 2> Avec(2, 5);
         host_multi_dim_vector<double, 1> xvec(5);
@@ -165,12 +178,55 @@ void blas_checks()
         x(4) = 5.5;
         auto devA = to_device(Avec);
         auto devx = to_device(xvec);
-        auto devy(matrix_multiply(blas_mgr, devA, devx));
+        auto devy = matrix_multiply(blas_mgr, devA, devx);
         auto yvec = to_host(devy);
         for (auto it = yvec.view().cbegin(), end = yvec.view().cend(); it != end; ++it) {
             std::cout << *it << ",";
         }
         std::cout << std::endl;
+    }
+    {
+        host_multi_dim_vector<double, 2> Avec(2, 5);
+        host_multi_dim_vector<double, 2> Bvec(5, 3);
+        auto A = Avec.view();
+        auto B = Bvec.view();
+        A(0, 0) = 1.0;
+        A(0, 1) = 2.0;
+        A(0, 2) = 3.0;
+        A(0, 3) = 4.0;
+        A(0, 4) = 5.0;
+        A(1, 0) = 6.0;
+        A(1, 1) = 7.0;
+        A(1, 2) = 8.0;
+        A(1, 3) = 9.0;
+        A(1, 4) = 10.0;
+
+        B(0, 0) = 1.0;
+        B(0, 1) = 2.0;
+        B(0, 2) = 3.0;
+        B(1, 0) = 4.0;
+        B(1, 1) = 5.0;
+        B(1, 2) = 6.0;
+        B(2, 0) = 7.0;
+        B(2, 1) = 8.0;
+        B(2, 2) = 9.0;
+        B(3, 0) = 10.0;
+        B(3, 1) = 11.0;
+        B(3, 2) = 12.0;
+        B(4, 0) = 13.0;
+        B(4, 1) = 14.0;
+        B(4, 2) = 15.0;
+
+        auto devA = to_device(Avec);
+        auto devB = to_device(Bvec);
+        auto devy = matrix_multiply(blas_mgr, devA, devB);
+        auto yvec = to_host(devy);
+        auto y = yvec.view();
+        print2D(y);
+        auto devyt = transpose(blas_mgr, devy);
+        auto ytvec = to_host(devyt);
+        auto yt = ytvec.view();
+        print2D(yt);
     }
 }
 
