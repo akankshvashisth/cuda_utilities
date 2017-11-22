@@ -227,13 +227,18 @@ void blas_checks()
         auto ytvec = to_host(devyt);
         auto yt = ytvec.view();
         print2D(yt);
+        
+        auto devaabb = alpha_A_plus_beta_B(blas_mgr, -1.0, devyt, -1.0, devyt);
+        auto yaabbvec = to_host(devaabb);
+        auto yaabb = yaabbvec.view();
+        print2D(yaabb);
     }
 }
 
 int main()
 {
     blas_checks();
-    return 0;
+    //return 0;
     //main2();
     compile_time_differentiation_tests();
 	run_experiments();

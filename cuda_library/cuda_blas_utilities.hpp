@@ -16,17 +16,17 @@ namespace aks
         template<typename T>
         using matrix = multi_dim_vector<T, 2>;
 
-        //template<typename T>
-        //size_t rows(cuda_matrix<T> const& t) {return get_max_dim<0>(t);}
+        template<typename T>
+        size_t rows(cuda_matrix<T> const& t) {return get_max_dim<0>(t);}
 
-        //template<typename T>
-        //size_t cols(cuda_matrix<T> const& t) { return get_max_dim<1>(t); }
+        template<typename T>
+        size_t cols(cuda_matrix<T> const& t) { return get_max_dim<1>(t); }
 
-        //template<typename T>
-        //size_t rows(cuda_vector<T> const& t) { return get_max_dim<0>(t); }
+        template<typename T>
+        size_t rows(cuda_vector<T> const& t) { return get_max_dim<0>(t); }
 
-        //template<typename T>
-        //size_t cols(cuda_vector<T> const& t) { return 1; }
+        template<typename T>
+        size_t cols(cuda_vector<T> const& t) { return 1; }
 
         template<typename T>
         size_t rows(matrix<T> const& t) { return get_max_dim<0>(t); }

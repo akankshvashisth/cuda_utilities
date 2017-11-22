@@ -61,31 +61,32 @@ namespace aks
             return y_vec;
         }
 
-        //cuda_blas_manager::status_type cublas_alpha_A_plus_beta_B(cuda_blas_manager const& mgr, double const alpha, matrix<double const> const& A, double const beta, matrix<double const> const& B, matrix<double>& y)
-        //{
-        //    return cuda_blas_monad(cuda_blas_manager::success_value, cublasDgeam, mgr.m_handle
-        //        , CUBLAS_OP_N, CUBLAS_OP_N
-        //        , rows(A), cols(A)
-        //        , &alpha
-        //        , A.data(), cols(A)
-        //        , &beta
-        //        , B.data(), cols(B)
-        //        , y.data(), cols(y)
-        //    );
-        //}
+        cuda_blas_manager::status_type cublas_alpha_A_plus_beta_B(cuda_blas_manager const& mgr, double const alpha, matrix<double const> const& A, double const beta, matrix<double const> const& B, matrix<double>& y)
+        {
+            return cuda_blas_monad(cuda_blas_manager::success_value, cublasDgeam, mgr.m_handle
+                , CUBLAS_OP_N, CUBLAS_OP_N
+                , cols(A), rows(A)
+                , &alpha
+                , A.data(), cols(A)
+                , &beta
+                , B.data(), cols(B)
+                , y.data(), cols(y)
+            );
+        }
 
-        //cuda_matrix<double> alpha_A_plus_beta_B(cuda_blas_manager const& mgr, double const alpha, cuda_matrix<double> const& A_matrix, double const beta, cuda_matrix<double> const& B_matrix)
-        //{
-        //    cuda_matrix<double const> const A = A_matrix.cview();
-        //    cuda_matrix<double const> const B = B_matrix.cview();
+        cuda_matrix<double> alpha_A_plus_beta_B(cuda_blas_manager const& mgr, double const alpha, cuda_matrix<double> const& A_matrix, double const beta, cuda_matrix<double> const& B_matrix)
+        {
+            matrix<double const> const A = A_matrix.cview();
+            matrix<double const> const B = B_matrix.cview();
 
-        //    cuda_matrix<double> y_vec(rows(A), cols(A));
-        //    matrix<double> y = y_vec.view();
+            assert(rows(A) == rows(B) && cols(A) == cols(B));
+            cuda_matrix<double> y_vec(rows(A), cols(A));
+            matrix<double> y = y_vec.view();
 
-        //    double const alpha = 1.0, beta = 0.0;
-        //    cuda_blas_manager::status_type status = cublas_alpha_A_plus_beta_B(mgr, alpha, A, beta, B, y);
-        //    assert(status == cuda_blas_manager::success_value);
-        //    return y_vec;
-        //}
+            //double const alpha = 1.0, beta = 0.0;
+            cuda_blas_manager::status_type status = cublas_alpha_A_plus_beta_B(mgr, alpha, A, beta, B, y);
+            assert(status == cuda_blas_manager::success_value);
+            return y_vec;
+        }
     }
 }
