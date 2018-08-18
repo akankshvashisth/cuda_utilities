@@ -27,6 +27,7 @@
 #include "cuda_blas_level_1.hpp"
 #include "cuda_blas_level_2.hpp"
 #include "cuda_blas_level_3.hpp"
+#include "cuda_operators.hpp"
 
 cudaError_t addWithCuda(std::vector<int>& c, std::vector<int> const& a, std::vector<int> const& b);
 cudaError_t addWithCuda2(std::vector<int>& c, std::vector<int> const& a, std::vector<int> const& b);
@@ -125,6 +126,17 @@ void print2D(T const& y)
         std::cout << std::endl;
     }
     std::cout << std::endl;
+}
+
+template<typename T>
+void print1D(T const& y)
+{
+	using namespace aks;
+	for (auto j = 0; j < aks::get_max_dim<0>(y); ++j) {
+		std::cout << y(j) << "\t";
+	}
+	std::cout << std::endl;
+	std::cout << std::endl;
 }
 
 void blas_checks()
@@ -235,30 +247,284 @@ void blas_checks()
     }
 }
 
+int operatorCheck()
+{
+	aks::host_multi_dim_vector<int, 2> host_in(10, 5);
+	aks::host_multi_dim_vector<int, 2> host_out(10, 5);
+	
+	auto in_ = host_in.view();
+	auto out_ = host_out.view();
+	auto m0 = aks::get_max_dim<0>(in_);
+	auto m1 = aks::get_max_dim<1>(in_);
+	for (auto x = 0; x < m0; ++x)
+		for (auto y = 0; y < m1; ++y){
+			in_(x, y) = 8;
+			out_(x, y) = 12;
+		}
+
+	aks::cuda_multi_dim_vector<int, 2> vec_in = aks::to_device(host_in);
+	aks::cuda_multi_dim_vector<int, 2> vec_out = aks::to_device(host_out);
+
+	aks::binaryOpInplace(vec_out.view(), vec_in.cview(), thrust::plus<int>());
+	aks::binaryOp(vec_out.view(), vec_out.cview(), vec_in.cview(), thrust::plus<int>());
+	aks::unaryOpInplace(vec_out.view(), [] AKS_FUNCTION_PREFIX_ATTR(int x) { return x * 2; });
+	aks::unaryOp(vec_out.view(), vec_out.cview(), [] AKS_FUNCTION_PREFIX_ATTR(int x) { return x * -1; });
+	host_out << vec_out;
+	print2D(host_out.cview());
+
+	return 0;
+}
+
+int reduceDimCheck()
+{
+	aks::host_multi_dim_vector<int, 2> host_in(10, 5);
+	aks::host_multi_dim_vector<int, 1> host_out_0(5);
+	aks::host_multi_dim_vector<int, 1> host_out_1(10);
+	auto in_ = host_in.view();
+	auto m0 = aks::get_max_dim<0>(in_);
+	auto m1 = aks::get_max_dim<1>(in_);
+	for (auto x = 0; x < m0; ++x)
+		for (auto y = 0; y < m1; ++y)
+			in_(x, y) = 8;
+
+	aks::cuda_multi_dim_vector<int, 2> vec_in = aks::to_device(host_in);
+	aks::cuda_multi_dim_vector<int, 1> vec_out_0 = aks::to_device(host_out_0);
+	aks::cuda_multi_dim_vector<int, 1> vec_out_1 = aks::to_device(host_out_1);
+
+	aks::reduceDim(vec_out_0.view(), vec_in.cview(), thrust::plus<int>(), 0);
+	host_out_0 << vec_out_0;
+	print1D(host_out_0.cview());
+
+	aks::reduceDim(vec_out_1.view(), vec_in.cview(), thrust::plus<int>(), 1);
+	host_out_1 << vec_out_1;
+	print1D(host_out_1.cview());
+
+	{
+		aks::host_multi_dim_vector<int, 3> host_x(7, 10, 5);
+		for (auto i = host_x.view().begin(), e = host_x.view().end(); i != e; ++i) {
+			*i = 3;
+		}
+		aks::cuda_multi_dim_vector<int, 2> out(10,5);
+		aks::cuda_multi_dim_vector<int, 3> in = aks::to_device(host_x);
+		aks::reduceDim(out.view(), in.cview(), thrust::plus<int>(), 0);
+		host_in << out;
+		print2D(host_in.cview());
+	}
+	{
+		aks::host_multi_dim_vector<int, 3> host_x(10, 8, 5);
+		for (auto i = host_x.view().begin(), e = host_x.view().end(); i != e; ++i) {
+			*i = 3;
+		}
+		aks::cuda_multi_dim_vector<int, 2> out(10, 5);
+		aks::cuda_multi_dim_vector<int, 3> in = aks::to_device(host_x);
+		aks::reduceDim(out.view(), in.cview(), thrust::plus<int>(), 1);
+		host_in << out;
+		print2D(host_in.cview());
+	}
+	{
+		aks::host_multi_dim_vector<int, 3> host_x(10, 5, 9);
+		for (auto i = host_x.view().begin(), e = host_x.view().end(); i != e; ++i) {
+			*i = 3;
+		}
+		aks::cuda_multi_dim_vector<int, 2> out(10, 5);
+		aks::cuda_multi_dim_vector<int, 3> in = aks::to_device(host_x);
+		aks::reduceDim(out.view(), in.cview(), thrust::plus<int>(), 2);
+		host_in << out;
+		print2D(host_in.cview());
+	}
+	{
+		aks::host_multi_dim_vector<int, 4> host_x(3, 10, 5, 9);
+		for (auto i = host_x.view().begin(), e = host_x.view().end(); i != e; ++i) {
+			*i = 3;
+		}
+		aks::cuda_multi_dim_vector<int, 3> out1(10, 5, 9);
+		aks::cuda_multi_dim_vector<int, 4> in = aks::to_device(host_x);
+		aks::reduceDim(out1.view(), in.cview(), thrust::plus<int>(), 0);
+
+		aks::cuda_multi_dim_vector<int, 2> out2(5, 9);
+		aks::reduceDim(out2.view(), out1.cview(), thrust::plus<int>(), 0);
+
+		auto res = aks::to_host(out2);
+		print2D(res.cview());
+
+		aks::cuda_multi_dim_vector<int, 1> out3(9);
+		aks::reduceDim(out3.view(), out2.cview(), thrust::plus<int>(), 0);
+
+		auto res2 = aks::to_host(out3);
+		print1D(res2.cview());
+	}
+	{
+		aks::host_multi_dim_vector<int, 4> host_x(3, 10, 5, 9);
+		for (auto i = host_x.view().begin(), e = host_x.view().end(); i != e; ++i) {
+			*i = 1;
+		}
+		aks::cuda_multi_dim_vector<int, 3> out1(3, 5, 9);
+		aks::cuda_multi_dim_vector<int, 4> in = aks::to_device(host_x);
+		aks::reduceDim(out1.view(), in.cview(), thrust::plus<int>(), 1);
+
+		aks::cuda_multi_dim_vector<int, 2> out2(3, 9);
+		aks::reduceDim(out2.view(), out1.cview(), thrust::plus<int>(), 1);
+
+		auto res = aks::to_host(out2);
+		print2D(res.cview());
+
+		aks::cuda_multi_dim_vector<int, 1> out3(3);
+		aks::reduceDim(out3.view(), out2.cview(), thrust::plus<int>(), 1);
+
+		auto res2 = aks::to_host(out3);
+		print1D(res2.cview());
+	}
+	{
+		aks::host_multi_dim_vector<int, 4> host_x(3, 10, 5, 9);
+		for (auto i = host_x.view().begin(), e = host_x.view().end(); i != e; ++i) {
+			*i = 1;
+		}
+		aks::cuda_multi_dim_vector<int, 3> out1(3, 10, 9);
+		aks::cuda_multi_dim_vector<int, 4> in = aks::to_device(host_x);
+		aks::reduceDim(out1.view(), in.cview(), thrust::plus<int>(), 2);
+
+		aks::cuda_multi_dim_vector<int, 2> out2(3, 10);
+		aks::reduceDim(out2.view(), out1.cview(), thrust::plus<int>(), 2);
+
+		auto res = aks::to_host(out2);
+		print2D(res.cview());
+
+		aks::cuda_multi_dim_vector<int, 1> out3(3);
+		aks::reduceDim(out3.view(), out2.cview(), thrust::plus<int>(), 1);
+
+		auto res2 = aks::to_host(out3);
+		print1D(res2.cview());
+	}
+
+	{
+		aks::host_multi_dim_vector<int, 4> host_x(3, 10, 5, 9);
+		for (auto i = host_x.view().begin(), e = host_x.view().end(); i != e; ++i) {
+			*i = 1;
+		}
+		aks::cuda_multi_dim_vector<int, 3> out1(3, 10, 5);
+		aks::cuda_multi_dim_vector<int, 4> in = aks::to_device(host_x);
+		aks::reduceDim(out1.view(), in.cview(), thrust::plus<int>(), 3);
+
+		aks::cuda_multi_dim_vector<int, 2> out2(3, 10);
+		aks::reduceDim(out2.view(), out1.cview(), thrust::plus<int>(), 2);
+
+		auto res = aks::to_host(out2);
+		print2D(res.cview());
+
+		aks::cuda_multi_dim_vector<int, 1> out3(3);
+		aks::reduceDim(out3.view(), out2.cview(), thrust::plus<int>(), 1);
+
+		auto res2 = aks::to_host(out3);
+		print1D(res2.cview());
+	}
+	{
+		{
+			auto testCase = []() -> aks::host_multi_dim_vector<double, 2> {
+				aks::host_multi_dim_vector<double, 2> Bvec(5, 3);
+				auto B = Bvec.view();
+				B(0, 0) = 1.0;
+				B(0, 1) = -2.0;
+				B(0, 2) = 0.0;
+				B(1, 0) = -4.0;
+				B(1, 1) = 5.0;
+				B(1, 2) = -6.0;
+				B(2, 0) = 2.0;
+				B(2, 1) = -8.0;
+				B(2, 2) = 9.0;
+				B(3, 0) = -10.0;
+				B(3, 1) = 11.0;
+				B(3, 2) = -12.0;
+				B(4, 0) = 1.0;
+				B(4, 1) = -14.0;
+				B(4, 2) = 15.0;
+				return Bvec;
+			};
+			auto Bvec(testCase());
+			print2D(Bvec.cview());
+			{
+				auto Bvec(testCase());
+				auto Bcuda = aks::to_device(Bvec);
+				aks::sortAxis(Bcuda, 0);
+				Bvec << Bcuda;
+				print2D(Bvec.view());
+			}
+			{
+				auto Bvec(testCase());
+				auto Bcuda = aks::to_device(Bvec);
+				aks::sortAxis(Bcuda, 1);
+				Bvec << Bcuda;
+				print2D(Bvec.view());
+			}
+		}
+		{
+			auto testCase2 = []() -> aks::host_multi_dim_vector<double, 2> {
+				aks::host_multi_dim_vector<double, 2> Bvec(3, 5);
+				auto B = Bvec.view();
+				B(0, 0) = 1.0;
+				B(0, 1) = -2.0;
+				B(0, 2) = 0.0;
+				B(0, 3) = -4.0;
+				B(0, 4) = 5.0;
+				B(1, 0) = -6.0;
+				B(1, 1) = 2.0;
+				B(1, 2) = -8.0;
+				B(1, 3) = 9.0;
+				B(1, 4) = -10.0;
+				B(2, 0) = 11.0;
+				B(2, 1) = -12.0;
+				B(2, 2) = 1.0;
+				B(2, 3) = -14.0;
+				B(2, 4) = 15.0;
+				return Bvec;
+			};
+			auto Bvec(testCase2());
+			print2D(Bvec.cview());
+			{
+				auto Bvec(testCase2());
+				auto Bcuda = aks::to_device(Bvec);
+				aks::sortAxis(Bcuda, 0);
+				Bvec << Bcuda;
+				print2D(Bvec.view());
+			}
+			{
+				auto Bvec(testCase2());
+				auto Bcuda = aks::to_device(Bvec);
+				aks::sortAxis(Bcuda, 1);
+				Bvec << Bcuda;
+				print2D(Bvec.view());
+			}
+		}
+	}
+
+	return 0;
+}
+
 int main()
 {
-    blas_checks();
-    //return 0;
-    //main2();
-    compile_time_differentiation_tests();
-	run_experiments();
-	//check2();
+	operatorCheck();
+	reduceDimCheck();
+ //   blas_checks();
+ //   //return 0;
+ //   //main2();
+ //   compile_time_differentiation_tests();
+	//run_experiments();
+	////check2();
 
-    //aks::cuda_context ctxt;
-    
-    std::vector<int> const a = { 1, 2, 3, 4, 5 };
-    std::vector<int> const b = { 10, 20, 30, 40, 50 };
-    std::vector<int> c;
+ //   //aks::cuda_context ctxt;
+ //   
+ //   std::vector<int> const a = { 1, 2, 3, 4, 5 };
+ //   std::vector<int> const b = { 10, 20, 30, 40, 50 };
+ //   std::vector<int> c;
 
-    // Add vectors in parallel.
-    cudaError_t cudaStatus = addWithCuda2(c, a, b);
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "addWithCuda failed!");
-        return 1;
-    }
+ //   // Add vectors in parallel.
+ //   cudaError_t cudaStatus = addWithCuda2(c, a, b);
+ //   if (cudaStatus != cudaSuccess) {
+ //       fprintf(stderr, "addWithCuda failed!");
+ //       return 1;
+ //   }
 
-    printf("{1,2,3,4,5} + {10,20,30,40,50} = {%d,%d,%d,%d,%d}\n",
-        c[0], c[1], c[2], c[3], c[4]);
+ //   printf("{1,2,3,4,5} + {10,20,30,40,50} = {%d,%d,%d,%d,%d}\n",
+ //       c[0], c[1], c[2], c[3], c[4]);
 
     return 0;
 }

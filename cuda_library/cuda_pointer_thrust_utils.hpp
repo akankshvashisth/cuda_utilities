@@ -19,6 +19,12 @@ namespace aks
         {
             return ::thrust::device_ptr<T>(ptr.data());
         }
+
+		template<typename T>
+		::thrust::device_ptr<T> end(cuda_pointer<T>& ptr)
+		{
+			return ::thrust::device_ptr<T>(ptr.data() + ptr.size());
+		}
     }
 }
 

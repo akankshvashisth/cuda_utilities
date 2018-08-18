@@ -160,6 +160,21 @@ namespace aks
 			return m_products[0];
 		}
 
+		template<typename other_type, size_t other_dimensions>
+		AKS_FUNCTION_PREFIX_ATTR bool is_shape_same_as(multi_dim_vector<other_type, other_dimensions> const& other) const
+		{
+			if (other.dimensions != dimensions) {
+				return false;
+			}
+
+			for (size_t i = 0; i < dimensions; ++i) {
+				if (this->m_products[i] != other.m_products[i])
+					return false;
+			}
+
+			return true;
+		}
+
 		template<size_t N>
 		AKS_FUNCTION_PREFIX_ATTR size_type max_dimension() const
 		{
@@ -222,6 +237,12 @@ namespace aks
 	AKS_FUNCTION_PREFIX_ATTR auto make_multi_dim_vector(T* data, Ns... ns)->multi_dim_vector <T, sizeof...(Ns)>
 	{ 
 		return multi_dim_vector <T, sizeof...(Ns)>(data, ns...); 
+	}
+
+	template<typename T, typename U, size_t N, size_t M>
+	AKS_FUNCTION_PREFIX_ATTR bool is_same_shape(aks::multi_dim_vector<T, N> const& a, aks::multi_dim_vector<U, M> const& b)
+	{
+		return a.is_shape_same_as(b);
 	}
 }
 
