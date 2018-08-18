@@ -205,7 +205,11 @@ namespace aks
 		template<typename... Ds>
 		AKS_FUNCTION_PREFIX_ATTR size_type index(size_type idx, Ds... idxs) const
 		{
-			return multi_dim_vector_detail::index_with_products<dimensions>(m_products, idx, idxs...);
+			auto ret = multi_dim_vector_detail::index_with_products<dimensions>(m_products, idx, idxs...);
+			//if (ret >= this->total_size()) {
+			//	printf("aaahhhhggg....\n");
+			//}
+			return ret;
 		}
 
 		pointer m_data;

@@ -77,14 +77,14 @@ namespace aks
 
 #define REDUCE_DIM_3_4_KERNEL_BEGIN(S, X, Y, Z)																		\
 	template<typename T, typename V, typename Func>																	\
-	__global__ void reduceDim ## S ## Kernel(multi_dim_vector<T, 3> c, multi_dim_vector<V const, 4> a, Func f)\
+	__global__ void reduceDim ## S ## Kernel(multi_dim_vector<T, 3> c, multi_dim_vector<V const, 4> a, Func f)		\
 	{																												\
 		for (auto i : grid_stride_range::x(size_t(0), get_max_dim< X >(a)))										\
 			for (auto j : grid_stride_range::y(size_t(0), get_max_dim< Y >(a)))									\
 				for (auto k : grid_stride_range::z(size_t(0), get_max_dim< Z >(a)))								\
 				{																										
 
-#define REDUCE_DIM_KERNEL_END }}
+#define REDUCE_DIM_KERNEL_END }} 
 
 	//BINARY REDUCERS
 #define REDUCE_DIM_KERNEL_MID				\
@@ -205,6 +205,52 @@ namespace aks
 	REDUCE_DIM_RANGE_KERNEL_MID
 		c(i, j, k) = reduced;
 	REDUCE_DIM_KERNEL_END
+
+
+//
+	template<typename T, size_t N>
+	struct point;
+
+	template<typename T>
+	struct point<T, 0>
+	{};
+
+	template<typename T> struct point<T, 1> : point<T, 0> { T x; };
+	template<typename T> struct point<T, 2> : point<T, 1> { T y; };
+	template<typename T> struct point<T, 3> : point<T, 2> { T z; };
+	template<typename T> struct point<T, 4> : point<T, 3> { T w; };
+
+	template<typename T, typename V, typename Func>
+	__global__ void subArrayKernel(multi_dim_vector<T, 1> c, multi_dim_vector<V const, 1> a, point<int, 1> from, Func f)
+	{
+		for (auto i : grid_stride_range::x(size_t(0), get_max_dim<0>(c)))
+		{			
+			c(i) = f(a(i + from.x));
+		}
+	}
+
+	template<typename T, typename V, typename Func>																			
+	__global__ void subArrayKernel(multi_dim_vector<T, 2> c, multi_dim_vector<V const, 2> a, point<int, 2> from, Func f)
+	{
+		for (auto i : grid_stride_range::x(size_t(0), get_max_dim<0>(c)))
+			for (auto j : grid_stride_range::y(size_t(0), get_max_dim<1>(c)))
+			{				
+				c(i, j) = f(a(i + from.x, j + from.y));
+			}
+	}
+
+	template<typename T, typename V, typename Func>
+	__global__ void subArrayKernel(multi_dim_vector<T, 3> c, multi_dim_vector<V const, 3> a, point<int, 3> from, Func f)
+	{
+		for (auto i : grid_stride_range::x(size_t(0), get_max_dim<0>(c)))
+			for (auto j : grid_stride_range::y(size_t(0), get_max_dim<1>(c)))
+				for (auto k : grid_stride_range::z(size_t(0), get_max_dim<2>(c)))
+			{
+					c(i, j, k) = f(a(i + from.x, j + from.y, k + from.z));
+			}
+	}
+
+//
 
 		std::tuple<dim3, dim3> calculateDims(int x, int y, int z)
 	{
@@ -475,7 +521,39 @@ namespace aks
 		//unaryOp(a.view(), temp.cview(), [] AKS_FUNCTION_PREFIX_ATTR(int x) { return x; });
 	}
 
-			}
+	template<typename T, typename U, typename Func>
+	void subArray(multi_dim_vector<T, 1> ma, multi_dim_vector<U const, 1> const mb, point<int, 1> from, Func f)
+	{
+		if (get_max_dim<0>(ma) + from.x <= get_max_dim<0>(mb))
+		{
+			auto dims = calculateDims(get_max_dim<0>(ma), 1, 1);
+			subArrayKernel<<<std::get<0>(dims), std::get<1>(dims) >>> (ma, mb, from, f);
+		}
+	}
+
+	template<typename T, typename U, typename Func>
+	void subArray(multi_dim_vector<T, 2> ma, multi_dim_vector<U const, 2> const mb, point<int, 2> from, Func f)
+	{
+		if (get_max_dim<0>(ma) + from.x <= get_max_dim<0>(mb) &&
+			get_max_dim<1>(ma) + from.y <= get_max_dim<1>(mb))
+		{
+			auto dims = calculateDims(get_max_dim<0>(ma), get_max_dim<1>(ma), 1);
+			subArrayKernel << <std::get<0>(dims), std::get<1>(dims) >> > (ma, mb, from, f);
+		}
+	}
+
+	template<typename T, typename U, typename Func>
+	void subArray(multi_dim_vector<T, 3> ma, multi_dim_vector<U const, 3> const mb, point<int, 3> from, Func f)
+	{
+		if (get_max_dim<0>(ma) + from.x <= get_max_dim<0>(mb) &&
+			get_max_dim<1>(ma) + from.y <= get_max_dim<1>(mb) &&
+			get_max_dim<2>(ma) + from.z <= get_max_dim<2>(mb))
+		{
+			auto dims = calculateDims(get_max_dim<0>(ma), get_max_dim<1>(ma), get_max_dim<2>(ma));
+			subArrayKernel << <std::get<0>(dims), std::get<1>(dims) >> > (ma, mb, from, f);
+		}
+	}
+}
 
 #endif // !__cuda_operators_hpp__
 

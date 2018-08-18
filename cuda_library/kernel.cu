@@ -538,7 +538,7 @@ int reduceDimCheck()
 		print1D(res2.cview());
 	}
 	{
-		{
+		{			
 			std::cout << "---" << testNum++ << "---\n";
 			auto testCase = []() -> aks::host_multi_dim_vector<double, 2> {
 				aks::host_multi_dim_vector<double, 2> Bvec(5, 3);
@@ -560,9 +560,62 @@ int reduceDimCheck()
 				B(4, 2) = 15.0;
 				return Bvec;
 			};
+			auto testCase1D = []() -> aks::host_multi_dim_vector<double, 1> {
+				aks::host_multi_dim_vector<double, 1> Bvec(10);
+				auto B = Bvec.view();
+				B(0) = 1.0;
+				B(1) = -2.0;
+				B(2) = 0.0;
+				B(3) = -4.0;
+				B(4) = 5.0;
+				B(5) = -6.0;
+				B(6) = 2.0;
+				B(7) = -8.0;
+				B(8) = 9.0;
+				B(9) = -10.0;				
+				return Bvec;
+			};
 			auto Bvec(testCase());
 			print2D(Bvec.cview());
 			{
+				std::cout << "---" << testNum++ << "---\n";
+				auto Bvec(testCase1D());
+				auto Bcuda = aks::to_device(Bvec);
+				aks::cuda_multi_dim_vector<double, 1> C(3);
+				aks::point<int, 1> from; from.x = 3;
+				aks::subArray(C.view(), Bcuda.cview(), from, [] AKS_FUNCTION_PREFIX_ATTR(double x) { return x; });
+				auto res = aks::to_host(C);
+				print1D(Bvec.view());
+				print1D(res.view());
+			}
+			{
+				std::cout << "---" << testNum++ << "---\n";
+				auto Bvec(testCase());
+				auto Bcuda = aks::to_device(Bvec);
+				aks::cuda_multi_dim_vector<double, 2> C(3,2);
+				aks::point<int, 2> from; from.x = 1, from.y = 1;
+				aks::subArray(C.view(), Bcuda.cview(), from, [] AKS_FUNCTION_PREFIX_ATTR(double x) { return x; });
+				auto res = aks::to_host(C);
+				print2D(Bvec.view());
+				print2D(res.view());
+			}
+			{
+				std::cout << "---" << testNum++ << "---\n";
+				auto Bvec(testCase());
+				auto Bcuda = aks::to_device(Bvec);
+				aks::cuda_multi_dim_vector<double, 2> C(5, 1);
+				aks::point<int, 2> from; from.x = 0, from.y = 1;
+				aks::subArray(C.view(), Bcuda.cview(), from, [] AKS_FUNCTION_PREFIX_ATTR(double x) { return x; });
+				auto res = aks::to_host(C);
+				print2D(Bvec.view());
+				print2D(res.view());
+				aks::cuda_multi_dim_vector<double, 1> C2(5);
+				aks::reduceDim(C2.view(), C.cview(), thrust::plus<double>(), 1);
+				auto res2 = aks::to_host(C2);
+				print1D(res2.view());
+			}
+			{
+				std::cout << "---" << testNum++ << "---\n";
 				auto Bvec(testCase());
 				auto Bcuda = aks::to_device(Bvec);
 				aks::sortAxis(Bcuda, 0);
@@ -570,12 +623,13 @@ int reduceDimCheck()
 				print2D(Bvec.view());
 			}
 			{
+				std::cout << "---" << testNum++ << "---\n";
 				auto Bvec(testCase());
 				auto Bcuda = aks::to_device(Bvec);
 				aks::sortAxis(Bcuda, 1);
 				Bvec << Bcuda;
 				print2D(Bvec.view());
-			}
+			}			
 		}
 		{
 			std::cout << "---" << testNum++ << "---\n";
@@ -602,6 +656,7 @@ int reduceDimCheck()
 			auto Bvec(testCase2());
 			print2D(Bvec.cview());
 			{
+				std::cout << "---" << testNum++ << "---\n";
 				auto Bvec(testCase2());
 				auto Bcuda = aks::to_device(Bvec);
 				aks::sortAxis(Bcuda, 0);
@@ -609,6 +664,7 @@ int reduceDimCheck()
 				print2D(Bvec.view());
 			}
 			{
+				std::cout << "---" << testNum++ << "---\n";
 				auto Bvec(testCase2());
 				auto Bcuda = aks::to_device(Bvec);
 				aks::sortAxis(Bcuda, 1);
@@ -625,7 +681,7 @@ int main()
 {
 	operatorCheck();
 	reduceDimCheck();
- //   blas_checks();
+    blas_checks();
  //   //return 0;
  //   //main2();
  //   compile_time_differentiation_tests();
