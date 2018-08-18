@@ -249,8 +249,8 @@ void blas_checks()
 
 int operatorCheck()
 {
-	aks::host_multi_dim_vector<int, 2> host_in(10, 5);
-	aks::host_multi_dim_vector<int, 2> host_out(10, 5);
+	aks::host_multi_dim_vector<double, 2> host_in(30, 10);
+	aks::host_multi_dim_vector<double, 2> host_out(30, 10);
 	
 	auto in_ = host_in.view();
 	auto out_ = host_out.view();
@@ -258,48 +258,75 @@ int operatorCheck()
 	auto m1 = aks::get_max_dim<1>(in_);
 	for (auto x = 0; x < m0; ++x)
 		for (auto y = 0; y < m1; ++y){
-			in_(x, y) = 8;
-			out_(x, y) = 12;
+			in_(x, y) = 8.3;
+			out_(x, y) = 12.1;
 		}
 
-	aks::cuda_multi_dim_vector<int, 2> vec_in = aks::to_device(host_in);
-	aks::cuda_multi_dim_vector<int, 2> vec_out = aks::to_device(host_out);
+	aks::cuda_multi_dim_vector<double, 2> vec_in = aks::to_device(host_in);
+	aks::cuda_multi_dim_vector<double, 2> vec_out = aks::to_device(host_out);
 
-	aks::binaryOpInplace(vec_out.view(), vec_in.cview(), thrust::plus<int>());
-	aks::binaryOp(vec_out.view(), vec_out.cview(), vec_in.cview(), thrust::plus<int>());
-	aks::unaryOpInplace(vec_out.view(), [] AKS_FUNCTION_PREFIX_ATTR(int x) { return x * 2; });
-	aks::unaryOp(vec_out.view(), vec_out.cview(), [] AKS_FUNCTION_PREFIX_ATTR(int x) { return x * -1; });
+	int testNum = 0;
+	std::cout << "---" << testNum++ << "---\n";
+	aks::binaryOpInplace(vec_out.view(), vec_in.cview(), thrust::plus<double>());
+	host_out << vec_out;
+	print2D(host_out.cview());
+	std::cout << "---" << testNum++ << "---\n";
+	aks::binaryOp(vec_out.view(), vec_out.cview(), vec_in.cview(), thrust::plus<double>());
+	host_out << vec_out;
+	print2D(host_out.cview());
+	std::cout << "---" << testNum++ << "---\n";
+	aks::unaryOpInplace(vec_out.view(), [] AKS_FUNCTION_PREFIX_ATTR(double x) { return x * 2; });
+	host_out << vec_out;
+	print2D(host_out.cview());
+	std::cout << "---" << testNum++ << "---\n";
+	aks::unaryOp(vec_out.view(), vec_out.cview(), [] AKS_FUNCTION_PREFIX_ATTR(double x) { return x * -1; });
 	host_out << vec_out;
 	print2D(host_out.cview());
 
 	return 0;
 }
 
+struct plusRange
+{
+	template<typename Iter>
+	AKS_FUNCTION_PREFIX_ATTR auto operator()(Iter b, Iter e) const
+	{
+		int sum = 0;
+		for (; b != e; ++b)
+			sum += *b;
+		return sum;
+	}
+};
+
 int reduceDimCheck()
 {
-	aks::host_multi_dim_vector<int, 2> host_in(10, 5);
-	aks::host_multi_dim_vector<int, 1> host_out_0(5);
-	aks::host_multi_dim_vector<int, 1> host_out_1(10);
-	auto in_ = host_in.view();
-	auto m0 = aks::get_max_dim<0>(in_);
-	auto m1 = aks::get_max_dim<1>(in_);
-	for (auto x = 0; x < m0; ++x)
-		for (auto y = 0; y < m1; ++y)
-			in_(x, y) = 8;
-
-	aks::cuda_multi_dim_vector<int, 2> vec_in = aks::to_device(host_in);
-	aks::cuda_multi_dim_vector<int, 1> vec_out_0 = aks::to_device(host_out_0);
-	aks::cuda_multi_dim_vector<int, 1> vec_out_1 = aks::to_device(host_out_1);
-
-	aks::reduceDim(vec_out_0.view(), vec_in.cview(), thrust::plus<int>(), 0);
-	host_out_0 << vec_out_0;
-	print1D(host_out_0.cview());
-
-	aks::reduceDim(vec_out_1.view(), vec_in.cview(), thrust::plus<int>(), 1);
-	host_out_1 << vec_out_1;
-	print1D(host_out_1.cview());
-
+	int testNum = 0;
 	{
+		std::cout << "---" << testNum++ << "---\n";
+		aks::host_multi_dim_vector<int, 2> host_in(10, 5);
+		aks::host_multi_dim_vector<int, 1> host_out_0(5);
+		aks::host_multi_dim_vector<int, 1> host_out_1(10);
+		auto in_ = host_in.view();
+		auto m0 = aks::get_max_dim<0>(in_);
+		auto m1 = aks::get_max_dim<1>(in_);
+		for (auto x = 0; x < m0; ++x)
+			for (auto y = 0; y < m1; ++y)
+				in_(x, y) = 8;
+
+		aks::cuda_multi_dim_vector<int, 2> vec_in = aks::to_device(host_in);
+		aks::cuda_multi_dim_vector<int, 1> vec_out_0 = aks::to_device(host_out_0);
+		aks::cuda_multi_dim_vector<int, 1> vec_out_1 = aks::to_device(host_out_1);
+
+		aks::reduceDim(vec_out_0.view(), vec_in.cview(), thrust::plus<int>(), 0);
+		host_out_0 << vec_out_0;
+		print1D(host_out_0.cview());
+
+		aks::reduceDim(vec_out_1.view(), vec_in.cview(), thrust::plus<int>(), 1);
+		host_out_1 << vec_out_1;
+		print1D(host_out_1.cview());
+	}
+	{
+		std::cout << "---" << testNum++ << "---\n";
 		aks::host_multi_dim_vector<int, 3> host_x(7, 10, 5);
 		for (auto i = host_x.view().begin(), e = host_x.view().end(); i != e; ++i) {
 			*i = 3;
@@ -307,10 +334,11 @@ int reduceDimCheck()
 		aks::cuda_multi_dim_vector<int, 2> out(10,5);
 		aks::cuda_multi_dim_vector<int, 3> in = aks::to_device(host_x);
 		aks::reduceDim(out.view(), in.cview(), thrust::plus<int>(), 0);
-		host_in << out;
-		print2D(host_in.cview());
+		auto res = aks::to_host(out);
+		print2D(res.cview());
 	}
 	{
+		std::cout << "---" << testNum++ << "---\n";
 		aks::host_multi_dim_vector<int, 3> host_x(10, 8, 5);
 		for (auto i = host_x.view().begin(), e = host_x.view().end(); i != e; ++i) {
 			*i = 3;
@@ -318,10 +346,11 @@ int reduceDimCheck()
 		aks::cuda_multi_dim_vector<int, 2> out(10, 5);
 		aks::cuda_multi_dim_vector<int, 3> in = aks::to_device(host_x);
 		aks::reduceDim(out.view(), in.cview(), thrust::plus<int>(), 1);
-		host_in << out;
-		print2D(host_in.cview());
+		auto res = aks::to_host(out);
+		print2D(res.cview());
 	}
 	{
+		std::cout << "---" << testNum++ << "---\n";
 		aks::host_multi_dim_vector<int, 3> host_x(10, 5, 9);
 		for (auto i = host_x.view().begin(), e = host_x.view().end(); i != e; ++i) {
 			*i = 3;
@@ -329,10 +358,11 @@ int reduceDimCheck()
 		aks::cuda_multi_dim_vector<int, 2> out(10, 5);
 		aks::cuda_multi_dim_vector<int, 3> in = aks::to_device(host_x);
 		aks::reduceDim(out.view(), in.cview(), thrust::plus<int>(), 2);
-		host_in << out;
-		print2D(host_in.cview());
+		auto res = aks::to_host(out);
+		print2D(res.cview());
 	}
 	{
+		std::cout << "---" << testNum++ << "---\n";
 		aks::host_multi_dim_vector<int, 4> host_x(3, 10, 5, 9);
 		for (auto i = host_x.view().begin(), e = host_x.view().end(); i != e; ++i) {
 			*i = 3;
@@ -354,6 +384,29 @@ int reduceDimCheck()
 		print1D(res2.cview());
 	}
 	{
+		std::cout << "---" << testNum++ << "---\n";
+		aks::host_multi_dim_vector<int, 4> host_x(3, 10, 5, 9);
+		for (auto i = host_x.view().begin(), e = host_x.view().end(); i != e; ++i) {
+			*i = 3;
+		}
+		aks::cuda_multi_dim_vector<int, 3> out1(10, 5, 9);
+		aks::cuda_multi_dim_vector<int, 4> in = aks::to_device(host_x);
+		aks::reduceDimRange(out1.view(), in.cview(), plusRange(), 0);
+
+		aks::cuda_multi_dim_vector<int, 2> out2(5, 9);
+		aks::reduceDimRange(out2.view(), out1.cview(), plusRange(), 0);
+
+		auto res = aks::to_host(out2);
+		print2D(res.cview());
+
+		aks::cuda_multi_dim_vector<int, 1> out3(9);
+		aks::reduceDimRange(out3.view(), out2.cview(), plusRange(), 0);
+
+		auto res2 = aks::to_host(out3);
+		print1D(res2.cview());
+	}
+	{
+		std::cout << "---" << testNum++ << "---\n";
 		aks::host_multi_dim_vector<int, 4> host_x(3, 10, 5, 9);
 		for (auto i = host_x.view().begin(), e = host_x.view().end(); i != e; ++i) {
 			*i = 1;
@@ -375,6 +428,29 @@ int reduceDimCheck()
 		print1D(res2.cview());
 	}
 	{
+		std::cout << "---" << testNum++ << "---\n";
+		aks::host_multi_dim_vector<int, 4> host_x(3, 10, 5, 9);
+		for (auto i = host_x.view().begin(), e = host_x.view().end(); i != e; ++i) {
+			*i = 1;
+		}
+		aks::cuda_multi_dim_vector<int, 3> out1(3, 5, 9);
+		aks::cuda_multi_dim_vector<int, 4> in = aks::to_device(host_x);
+		aks::reduceDimRange(out1.view(), in.cview(), plusRange(), 1);
+
+		aks::cuda_multi_dim_vector<int, 2> out2(3, 9);
+		aks::reduceDimRange(out2.view(), out1.cview(), plusRange(), 1);
+
+		auto res = aks::to_host(out2);
+		print2D(res.cview());
+
+		aks::cuda_multi_dim_vector<int, 1> out3(3);
+		aks::reduceDimRange(out3.view(), out2.cview(), plusRange(), 1);
+
+		auto res2 = aks::to_host(out3);
+		print1D(res2.cview());
+	}
+	{
+		std::cout << "---" << testNum++ << "---\n";
 		aks::host_multi_dim_vector<int, 4> host_x(3, 10, 5, 9);
 		for (auto i = host_x.view().begin(), e = host_x.view().end(); i != e; ++i) {
 			*i = 1;
@@ -395,8 +471,30 @@ int reduceDimCheck()
 		auto res2 = aks::to_host(out3);
 		print1D(res2.cview());
 	}
-
 	{
+		std::cout << "---" << testNum++ << "---\n";
+		aks::host_multi_dim_vector<int, 4> host_x(3, 10, 5, 9);
+		for (auto i = host_x.view().begin(), e = host_x.view().end(); i != e; ++i) {
+			*i = 1;
+		}
+		aks::cuda_multi_dim_vector<int, 3> out1(3, 10, 9);
+		aks::cuda_multi_dim_vector<int, 4> in = aks::to_device(host_x);
+		aks::reduceDimRange(out1.view(), in.cview(), plusRange(), 2);
+
+		aks::cuda_multi_dim_vector<int, 2> out2(3, 10);
+		aks::reduceDimRange(out2.view(), out1.cview(), plusRange(), 2);
+
+		auto res = aks::to_host(out2);
+		print2D(res.cview());
+
+		aks::cuda_multi_dim_vector<int, 1> out3(3);
+		aks::reduceDimRange(out3.view(), out2.cview(), plusRange(), 1);
+
+		auto res2 = aks::to_host(out3);
+		print1D(res2.cview());
+	}
+	{
+		std::cout << "---" << testNum++ << "---\n";
 		aks::host_multi_dim_vector<int, 4> host_x(3, 10, 5, 9);
 		for (auto i = host_x.view().begin(), e = host_x.view().end(); i != e; ++i) {
 			*i = 1;
@@ -418,7 +516,30 @@ int reduceDimCheck()
 		print1D(res2.cview());
 	}
 	{
+		std::cout << "---" << testNum++ << "---\n";
+		aks::host_multi_dim_vector<int, 4> host_x(3, 10, 5, 9);
+		for (auto i = host_x.view().begin(), e = host_x.view().end(); i != e; ++i) {
+			*i = 1;
+		}
+		aks::cuda_multi_dim_vector<int, 3> out1(3, 10, 5);
+		aks::cuda_multi_dim_vector<int, 4> in = aks::to_device(host_x);
+		aks::reduceDimRange(out1.view(), in.cview(), plusRange(), 3);
+
+		aks::cuda_multi_dim_vector<int, 2> out2(3, 10);
+		aks::reduceDimRange(out2.view(), out1.cview(), plusRange(), 2);
+
+		auto res = aks::to_host(out2);
+		print2D(res.cview());
+
+		aks::cuda_multi_dim_vector<int, 1> out3(3);
+		aks::reduceDimRange(out3.view(), out2.cview(), plusRange(), 1);
+
+		auto res2 = aks::to_host(out3);
+		print1D(res2.cview());
+	}
+	{
 		{
+			std::cout << "---" << testNum++ << "---\n";
 			auto testCase = []() -> aks::host_multi_dim_vector<double, 2> {
 				aks::host_multi_dim_vector<double, 2> Bvec(5, 3);
 				auto B = Bvec.view();
@@ -457,6 +578,7 @@ int reduceDimCheck()
 			}
 		}
 		{
+			std::cout << "---" << testNum++ << "---\n";
 			auto testCase2 = []() -> aks::host_multi_dim_vector<double, 2> {
 				aks::host_multi_dim_vector<double, 2> Bvec(3, 5);
 				auto B = Bvec.view();
