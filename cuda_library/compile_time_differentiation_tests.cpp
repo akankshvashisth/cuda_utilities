@@ -28,7 +28,6 @@ std::string& replace(
 	return s;
 }
 std::string demangle(const char* name) {
-
 	//int status = -4; // some arbitrary value to eliminate the compiler warning
 	//
 	//				 // enable c++11 by passing the flag -std=c++11 to g++
@@ -214,7 +213,7 @@ template<size_t Fn, size_t Vn, typename... Ts, typename R, typename... As>
 auto set_value(std::tuple<Ts...> const& t, R& res, std::tuple<As...> const& a, size_t_holder<Vn>)
 {
 	//std::cout << "Function = " << Fn << " " << "Variable = " << Vn << " " << "Value = " << apply(get_jacobian_element<Fn, Vn>(t), a) << std::endl;
-	res(Fn,Vn) = apply(get_jacobian_element<Fn, Vn>(t), a);
+	res(Fn, Vn) = apply(get_jacobian_element<Fn, Vn>(t), a);
 	return true;
 }
 
@@ -263,15 +262,15 @@ constexpr auto gradient(F f)
 
 template<typename... Ts, typename... As>
 auto value_gradient_at(std::tuple<Ts...> const& t, As... as)
-{			
-	return aks::tuple_utils::map(t, [=](auto f) { return f(as...); });	
+{
+	return aks::tuple_utils::map(t, [=](auto f) { return f(as...); });
 }
 
 template<typename... Ts, size_t... Is, typename R, typename... As>
 auto value_gradient_at_in_res_impl(std::tuple<Ts...> const& t, sz_seq<Is...>, R& res, As... as)
-{	
+{
 	auto assign = [&res](size_t i, auto t) {res(i) = t; return 0; };
-	eat_up(assign( Is, std::get<Is>(t)(as...) )... );
+	eat_up(assign(Is, std::get<Is>(t)(as...))...);
 }
 
 template<typename... Ts, typename R, typename... As>
@@ -289,14 +288,14 @@ bool is_abs_greater_than(T t, T x)
 template<typename F, typename T>
 auto newton_raphson(F f, T guess, T tolerance, int max_counter)
 {
-	auto val = f(guess);	
+	auto val = f(guess);
 	while (is_abs_greater_than(val, tolerance) && max_counter-- > 0)
 	{
 		guess = guess - val / aks::derivative(f)(guess);
 		val = f(guess);
 		//std::cout << max_counter << " " << guess << " " << val << std::endl;
 	}
-	
+
 	return std::make_tuple(guess, !is_abs_greater_than(val, tolerance));
 }
 
@@ -307,42 +306,42 @@ auto newton_raphson(F f, T guess, T tolerance, int max_counter)
 template<typename _Container>
 std::string join(std::string const& delimiter, _Container const& c)
 {
-    if (std::empty(c)) {
-        return std::string();
-    }
+	if (std::empty(c)) {
+		return std::string();
+	}
 
-    auto begin = std::begin(c);
-    std::stringstream ss;
-    ss << *begin++;
+	auto begin = std::begin(c);
+	std::stringstream ss;
+	ss << *begin++;
 
-    for (;begin != std::end(c);) {
-        ss << delimiter << *begin++;
-    }
+	for (; begin != std::end(c);) {
+		ss << delimiter << *begin++;
+	}
 
-    return ss.str();
+	return ss.str();
 }
 
 template<typename _Container, typename _Func>
 std::string join(std::string const& delimiter, _Container const& c, _Func f)
 {
-    if (std::empty(c)) {
-        return std::string();
-    }
+	if (std::empty(c)) {
+		return std::string();
+	}
 
-    auto begin = std::begin(c);
-    std::stringstream ss;
-    ss << f(*begin++);
+	auto begin = std::begin(c);
+	std::stringstream ss;
+	ss << f(*begin++);
 
-    for (; begin != std::end(c);) {
-        ss << delimiter << f(*begin++);
-    }
+	for (; begin != std::end(c);) {
+		ss << delimiter << f(*begin++);
+	}
 
-    return ss.str();
+	return ss.str();
 }
 
-std::string to_string(bool b) 
-{ 
-	return b ? "true" : "false";  
+std::string to_string(bool b)
+{
+	return b ? "true" : "false";
 };
 
 template<typename T>
@@ -357,7 +356,7 @@ template<typename T>
 std::string to_string(std::vector<T> const& v) {
 	std::stringstream ss;
 	ss << "{";
-    ss << join(", ", v, [](T const& t) {return to_string(t); });
+	ss << join(", ", v, [](T const& t) {return to_string(t); });
 	ss << "}";
 	return ss.str();
 };
@@ -367,8 +366,8 @@ std::string to_string(std::vector<std::vector<T>> const& v) {
 	std::stringstream ss;
 	ss << "{\n  ";
 	if (!v.empty())
-	{			
-        ss << join(",\n  ", v, [](std::vector<T> const& t) {return to_string(t); });
+	{
+		ss << join(",\n  ", v, [](std::vector<T> const& t) {return to_string(t); });
 		/*auto begin = v.cbegin();
 		ss << "\n  " << to_string(*begin++);
 		std::for_each(begin, v.cend(), [&](auto const& d) {
@@ -382,7 +381,6 @@ std::string to_string(std::vector<std::vector<T>> const& v) {
 
 int compile_time_differentiation_tests()
 {
-
 	aks::variable<0> x;
 	aks::variable<1> y;
 	aks::variable<2> z;
@@ -439,7 +437,7 @@ int compile_time_differentiation_tests()
 
 		std::cout << ((x*y * 3 * z)(1, 2, 4) == 24) << std::endl;
 
-		std::cout << ((x*y*z + x*x*x + y*z / (x*2.5) - z + z*z)(2.0, 3.0, 4.0) == 46.4) << std::endl;
+		std::cout << ((x*y*z + x * x*x + y * z / (x*2.5) - z + z * z)(2.0, 3.0, 4.0) == 46.4) << std::endl;
 
 		std::cout << ((x ^ 5)(2) == 32) << std::endl;
 		std::cout << ((5 ^ x)(2) == 25) << std::endl;
@@ -477,7 +475,7 @@ int compile_time_differentiation_tests()
 		bool converged;
 		std::tie(root, converged) = newton_raphson(eq, 1.2/*guess*/, 1e-13/*tolerance*/, 20/*max iterations*/);
 		auto pi_by_what = [pi](auto x) { return pi / x; };
-		std::cout << root << " " << to_string(converged) << " "<< eq(root) << " pi/" << pi_by_what(root) << std::endl;
+		std::cout << root << " " << to_string(converged) << " " << eq(root) << " pi/" << pi_by_what(root) << std::endl;
 	}
 	{
 		std::cout << depends_on(x*x, x) << std::endl;
@@ -501,7 +499,7 @@ int compile_time_differentiation_tests()
 		std::cout << Max<3, 2, 4, 2, 5, 3, 6, 3, 2, 4, 2, 2>::value << std::endl;
 	}
 	{
-		auto j = jacobian(x*w, y*z, y*y, z*z, x*x, y*x*z + x*w);
+		auto j = jacobian(x*w, y*z, y*y, z*z, x*x, y*x*z + x * w);
 		std::vector<std::vector<double>> res(get_number_of_function(j), std::vector<double>(get_number_of_variables(j), 0.0));
 		auto res_func = [&res](size_t fn, size_t v)->double& {return res[fn][v]; };
 		value_jacobian_at(j, res_func, 1.5, 3.3, 2.7, 3.4);
@@ -541,14 +539,14 @@ int compile_time_differentiation_tests()
 
 	//std::cout << std::to_string(ds) << "\n"
 	//	<< std::to_string(dds) << "\n"
-    //  << std::to_string(ddds) << "\n"
+	//  << std::to_string(ddds) << "\n"
 	//	<< std::to_string(ddds) << "\n"
 	//	<< std::to_string(dddds) << "\n"
 	//	<< std::to_string(ddddds) << "\n"
 	//	<< std::endl;
 
 	{
-		auto j = jacobian(x*w, y*z, y*y, z*z, x*x, y*x*z + x*w);
+		auto j = jacobian(x*w, y*z, y*y, z*z, x*x, y*x*z + x * w);
 		std::vector<std::vector<double>> res(get_number_of_function(j), std::vector<double>(get_number_of_variables(j), 0.0));
 		auto res_func = [&res](size_t fn, size_t v)->double& {return res[fn][v]; };
 		value_jacobian_at(j, res_func, 1.5, 3.3, 2.7, 3.4);
@@ -569,7 +567,7 @@ int compile_time_differentiation_tests()
 		std::cout << get_jacobian_element<3, 2>(j)(1.5, 3.3, 2.7, 3.4) << std::endl;
 	}
 	{
-		auto j = jacobian(x*w, y*z, y*y, z*z, x*x, y*x*z + x*w);
+		auto j = jacobian(x*w, y*z, y*y, z*z, x*x, y*x*z + x * w);
 		std::vector<double> res(get_number_of_function(j) * get_number_of_variables(j));
 		auto res_func = [&res, j](size_t fn, size_t v)->double& {return res[fn * get_number_of_variables(j) + v]; };
 		value_jacobian_at(j, res_func, 1.5, 3.3, 2.7, 3.4);
@@ -590,7 +588,7 @@ int compile_time_differentiation_tests()
 		std::cout << get_jacobian_element<3, 2>(j)(1.5, 3.3, 2.7, 3.4) << std::endl;
 	}
 	{
-		auto fs_sum = x + y + z + (x^2.0) + x*y + x*z + (y^2.0) + y*z + (z^2.0) + (x^3.0);
+		auto fs_sum = x + y + z + (x^2.0) + x * y + x * z + (y^2.0) + y * z + (z^2.0) + (x^3.0);
 		std::cout << "-------" << fs_sum(1.2, 3.2, 1.3) << "-------" << std::endl;
 
 		auto fs = functions(x, y, z, x ^ 2, x*y, x*z, y ^ 2, y*z, z ^ 2, x ^ 3);
@@ -655,7 +653,7 @@ int compile_time_differentiation_tests()
 		std::cout << m(0.5) << " " << dm(0.5) << " " << dm2(0.5) << " " << dm3(0.5) << " " << dm4(0.5) << std::endl;
 	}
 	{
-		auto n = -x*x;
+		auto n = -x * x;
 		auto dn = derivative(n);
 		auto dn2 = derivative(dn);
 		auto dn3 = derivative(dn2);
@@ -692,8 +690,8 @@ int compile_time_differentiation_tests()
 		auto vdp2 = dp2(2);
 		auto vdp3 = dp3(2);
 
-		std::cout << vp	  << " ";
-		std::cout << vdp  << " ";
+		std::cout << vp << " ";
+		std::cout << vdp << " ";
 		std::cout << vdp2 << " ";
 		std::cout << vdp3 << " " << std::endl;
 
@@ -730,7 +728,7 @@ int compile_time_differentiation_tests()
 		std::cout << demangle(typeid(a10).name()) << std::endl;
 		std::cout << demangle(typeid(a11).name()) << std::endl;
 		//std::cout << demangle(typeid(a12).name()) << std::endl;
-		
+
 		std::cout << a0(pi / 2.0) << std::endl;
 		std::cout << a1(pi / 2.0) << std::endl;
 		std::cout << a2(pi / 2.0) << std::endl;

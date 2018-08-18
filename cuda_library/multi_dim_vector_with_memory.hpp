@@ -65,9 +65,9 @@ namespace aks
 				static_assert(sizeof...(ts) == dimensions, "Incorrect number of arguments");
 			}
 
-            multi_dim_vector_with_memory(multi_dim_vector_with_memory&& other) : m_data(std::move(other.m_data)), m_dimensions(other.m_dimensions){}
-            multi_dim_vector_with_memory(multi_dim_vector_with_memory& ) = delete;
-            //multi_dim_vector_with_memory& operator=(multi_dim_vector_with_memory&) = delete;
+			multi_dim_vector_with_memory(multi_dim_vector_with_memory&& other) : m_data(std::move(other.m_data)), m_dimensions(other.m_dimensions) {}
+			multi_dim_vector_with_memory(multi_dim_vector_with_memory&) = delete;
+			//multi_dim_vector_with_memory& operator=(multi_dim_vector_with_memory&) = delete;
 
 			view_type       view() { return detail::make_multi_dim_vector(m_data.data(), m_dimensions); }
 			const_view_type view() const { return detail::make_multi_dim_vector(static_cast<const_value_type const*>(m_data.data()), m_dimensions); }
@@ -81,4 +81,3 @@ namespace aks
 }
 
 #endif // !__multi_dim_vector_with_memory_hpp__
-

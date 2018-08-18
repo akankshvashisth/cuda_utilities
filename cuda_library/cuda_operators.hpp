@@ -52,8 +52,6 @@ namespace aks
 		}
 	}
 
-
-
 	template<typename T, typename V, typename Func, size_t N>
 	__global__ void reduceDim0Kernel(multi_dim_vector<T, N - 1> c, multi_dim_vector<V const, N> a, Func f);
 
@@ -82,9 +80,8 @@ namespace aks
 		for (auto i : grid_stride_range::x(size_t(0), get_max_dim< X >(a)))										\
 			for (auto j : grid_stride_range::y(size_t(0), get_max_dim< Y >(a)))									\
 				for (auto k : grid_stride_range::z(size_t(0), get_max_dim< Z >(a)))								\
-				{																										
-
-#define REDUCE_DIM_KERNEL_END }} 
+				{
+#define REDUCE_DIM_KERNEL_END }}
 
 	//BINARY REDUCERS
 #define REDUCE_DIM_KERNEL_MID				\
@@ -206,9 +203,8 @@ namespace aks
 		c(i, j, k) = reduced;
 	REDUCE_DIM_KERNEL_END
 
-
-//
-	template<typename T, size_t N>
+		//
+		template<typename T, size_t N>
 	struct point;
 
 	template<typename T>
@@ -224,17 +220,17 @@ namespace aks
 	__global__ void subArrayKernel(multi_dim_vector<T, 1> c, multi_dim_vector<V const, 1> a, point<int, 1> from, Func f)
 	{
 		for (auto i : grid_stride_range::x(size_t(0), get_max_dim<0>(c)))
-		{			
+		{
 			c(i) = f(a(i + from.x));
 		}
 	}
 
-	template<typename T, typename V, typename Func>																			
+	template<typename T, typename V, typename Func>
 	__global__ void subArrayKernel(multi_dim_vector<T, 2> c, multi_dim_vector<V const, 2> a, point<int, 2> from, Func f)
 	{
 		for (auto i : grid_stride_range::x(size_t(0), get_max_dim<0>(c)))
 			for (auto j : grid_stride_range::y(size_t(0), get_max_dim<1>(c)))
-			{				
+			{
 				c(i, j) = f(a(i + from.x, j + from.y));
 			}
 	}
@@ -245,14 +241,14 @@ namespace aks
 		for (auto i : grid_stride_range::x(size_t(0), get_max_dim<0>(c)))
 			for (auto j : grid_stride_range::y(size_t(0), get_max_dim<1>(c)))
 				for (auto k : grid_stride_range::z(size_t(0), get_max_dim<2>(c)))
-			{
+				{
 					c(i, j, k) = f(a(i + from.x, j + from.y, k + from.z));
-			}
+				}
 	}
 
-//
+	//
 
-		std::tuple<dim3, dim3> calculateDims(int x, int y, int z)
+	std::tuple<dim3, dim3> calculateDims(int x, int y, int z)
 	{
 		auto blockDimCalc = [](int a) { return a > 1024 ? a / 1024 : 1; };
 		auto threadDimCalc = [](int a) { return a <= 1024 ? a : 1024; };
@@ -527,7 +523,7 @@ namespace aks
 		if (get_max_dim<0>(ma) + from.x <= get_max_dim<0>(mb))
 		{
 			auto dims = calculateDims(get_max_dim<0>(ma), 1, 1);
-			subArrayKernel<<<std::get<0>(dims), std::get<1>(dims) >>> (ma, mb, from, f);
+			subArrayKernel << <std::get<0>(dims), std::get<1>(dims) >> > (ma, mb, from, f);
 		}
 	}
 
@@ -553,7 +549,6 @@ namespace aks
 			subArrayKernel << <std::get<0>(dims), std::get<1>(dims) >> > (ma, mb, from, f);
 		}
 	}
-}
+			}
 
 #endif // !__cuda_operators_hpp__
-

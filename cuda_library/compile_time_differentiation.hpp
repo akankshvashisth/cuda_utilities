@@ -114,7 +114,7 @@ namespace aks
     template<typename T, typename U> typename std::enable_if<is_constant<T>::value && is_not_constant<U>::value, binary<constant<T>,U, NAME >>::type OP ( T t, U u ) { return binary<constant<T>,U, NAME >(t,u); } \
     template<typename T, typename U> auto OP ( constant<T> t, constant<U> u ) { return make_constant(PREFIX_NAME(t.t,u.t)); } \
     template<typename T, typename U> auto OP ( T t, constant<U> u )           { return (PREFIX_NAME(t, u.t) ); } \
-    template<typename T, typename U> auto OP ( constant<T> t, U u )           { return (PREFIX_NAME(t.t, u) ); } 
+    template<typename T, typename U> auto OP ( constant<T> t, U u )           { return (PREFIX_NAME(t.t, u) ); }
 
 	DEFINE_BINARY_FUNC_PREFIX(arc_tangent_2, std::atan2, atan2);
 
@@ -230,7 +230,7 @@ namespace aks
 	auto derivative(unary<T, hyperbolic_arc_tangent> u) { return (1 / (1 - u.t*u.t))*derivative(u.t); }
 
 	template<typename T>
-	auto derivative(unary<T, exponential> u) { return u*derivative(u.t); }
+	auto derivative(unary<T, exponential> u) { return u * derivative(u.t); }
 
 	template<typename T>
 	auto derivative(unary<T, sq_root> u) { return (0.5 * (1.0 / u))*derivative(u.t); }
@@ -372,7 +372,7 @@ namespace aks
 	auto differentiate(binary<T, U, mul> b, variable<N> v) { return get_return<!depends_on_dim<decltype(b), N>::value>::apply(constant<int>(0), (differentiate(b.t, v)*b.u) + (differentiate(b.u, v)*b.t)); }
 
 	//template<size_t N, typename U, size_t D>
-	//auto differentiate( binary<variable<N>,U,mul> b, variable<D> v) { return get_return<!depends_on_dim<decltype(b), D>::value>::apply(constant<int>(0),  (b.u) + (differentiate(b.u)*b.t));  }  
+	//auto differentiate( binary<variable<N>,U,mul> b, variable<D> v) { return get_return<!depends_on_dim<decltype(b), D>::value>::apply(constant<int>(0),  (b.u) + (differentiate(b.u)*b.t));  }
 	//
 	//template<typename T, size_t N, size_t D>
 	//auto differentiate( binary<T,variable<N>,mul> b, variable<D> v) { return get_return<!depends_on_dim<decltype(b), D>::value>::apply(constant<int>(0),  (differentiate(b.t)*b.u) + (b.t));  }
@@ -485,6 +485,4 @@ namespace aks
 	auto differentiate(unary<variable<N>, absolute_value> u, variable<D> v) { return get_return<!(N == D)>::apply(constant<int>(0), (u.t / u)); }
 }
 
-
 #endif // !__compile_time_differentiation_hpp__
-

@@ -42,6 +42,5 @@ namespace aks
 		};
 	}
 }
- 
-#endif // !__variadic_arg_helpers_hpp__
 
+#endif // !__variadic_arg_helpers_hpp__

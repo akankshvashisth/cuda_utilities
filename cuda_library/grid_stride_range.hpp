@@ -22,7 +22,6 @@ namespace aks
 		value_type m_step;
 	};
 
-
 	template<typename _iterator_type>
 	struct range
 	{
@@ -55,7 +54,7 @@ namespace aks
 	{
 		return step_range<T>{ b, e, step };
 	}
-	
+
 	struct grid_stride_range
 	{
 		template<typename T>
@@ -76,9 +75,6 @@ namespace aks
 			return make_stride_range(T(b + blockDim.z * blockIdx.z + threadIdx.z), e, T(gridDim.z * blockDim.z));
 		}
 	};
-
 }
 
-
 #endif // !__grid_stride_range_hpp__
-

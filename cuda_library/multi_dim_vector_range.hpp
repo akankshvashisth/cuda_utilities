@@ -41,4 +41,3 @@ namespace aks
 }
 
 #endif // !__multi_dim_vector_range__hpp__
-

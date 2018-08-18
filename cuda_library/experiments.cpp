@@ -7,7 +7,7 @@
 template<size_t N, typename F, typename... Ts>
 struct curry
 {
-	enum{remaining = N-sizeof...(Ts)};
+	enum { remaining = N - sizeof...(Ts) };
 	typedef std::tuple<Ts...> tuple_type;
 
 	curry(F f, Ts... ts) :args(ts...) {}
@@ -38,8 +38,8 @@ void show(int x, int y, int z, int w)
 
 void addKernel3(aks::multi_dim_vector<int, 3> c, aks::multi_dim_vector<int const, 3> const a, aks::multi_dim_vector<int const, 3> const b)
 {
-	for (size_t i = 0; i<3; ++i)
-		for (size_t j = 0; j<4; ++j)
+	for (size_t i = 0; i < 3; ++i)
+		for (size_t j = 0; j < 4; ++j)
 			for (size_t k = 0; k < 5; ++k) {
 				int sum = 0;
 				for (auto it = aks::begin(a, aks::token(), j, k), end = aks::end(a, aks::token(), j, k); it != end; ++it)
@@ -56,9 +56,9 @@ void addKernel3(aks::multi_dim_vector<int, 3> c, aks::multi_dim_vector<int const
 template<size_t _dimensions>
 struct multi_dim_counter
 {
-	enum{dimensions = _dimensions};
+	enum { dimensions = _dimensions };
 	multi_dim_counter(
-		  bool * const varying_dimensions
+		bool * const varying_dimensions
 		, size_t * const current
 		, size_t * const maximums
 	) {
@@ -76,12 +76,13 @@ struct multi_dim_counter
 	}
 
 	void increment() {
-		for (int i = dimensions-1; i >= int(0); --i) {
+		for (int i = dimensions - 1; i >= int(0); --i) {
 			if (m_varying_dimensions[i]) {
 				++m_current[i];
 				if (m_current[i] == m_maximums[i]) {
 					m_current[i] = 0;
-				} else {
+				}
+				else {
 					break;
 				}
 			}
@@ -96,7 +97,7 @@ struct multi_dim_counter
 template<size_t dimensions>
 std::ostream& operator<<(std::ostream& o, multi_dim_counter<dimensions> const& c)
 {
-	auto print = [&](auto const* x){
+	auto print = [&](auto const* x) {
 		o << '{';
 		o << x[0];
 		for (size_t i = 1; i < dimensions; ++i) {
@@ -118,7 +119,6 @@ size_t index_find(As...)
 template<typename... args>
 auto make_counter(args... as)
 {
-
 }
 
 #include <type_traits>
@@ -200,13 +200,11 @@ int exp_01()
 	auto ct9 = token_idx<4, 0, 1, 1, 0, 1, 0, 1, 1, 0>::value;
 	//auto ct10 = token_idx<5, 0, 1, 1, 0, 1, 0, 1, 1, 0>::value;
 
-
 	something(2, token(), 2, token(), token(), 3.0);
 	auto m = moving(2, token(), token(), token(), 1.0, token(), 3.0);
 
 	return 0;
 }
-
 
 int run_experiments()
 {
@@ -231,16 +229,16 @@ int run_experiments()
 		{
 			printf("%d\n", x);
 		}
-		
+
 		printf("%zd\n", index_find(aks::token()));
-		printf("%zd\n", index_find(2,2,aks::token()));
-		printf("%zd\n", index_find(2, 2, aks::token(),3,4));
+		printf("%zd\n", index_find(2, 2, aks::token()));
+		printf("%zd\n", index_find(2, 2, aks::token(), 3, 4));
 		for (auto it = aks::begin(view, aks::token(5)), end = aks::end(view, aks::token(5)); it != end; ++it)
 			*it = 23;
 		auto const cview = view;
 		for (auto it = aks::begin(cview, aks::token()), end = aks::end(cview, aks::token()); it != end; ++it)
 			printf("%d, ", *it);
-		for (auto& x : aks::make_multi_dim_vector_range(view, aks::token(10)) )
+		for (auto& x : aks::make_multi_dim_vector_range(view, aks::token(10)))
 		{
 			printf("%d, ", x);
 		}

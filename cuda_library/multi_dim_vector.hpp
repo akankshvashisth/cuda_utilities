@@ -37,7 +37,4 @@ namespace aks
 	}
 }
 
-
 #endif // !__multi_dim_vector_hpp__
-
-

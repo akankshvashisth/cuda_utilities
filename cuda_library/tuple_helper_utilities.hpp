@@ -5,12 +5,10 @@
 
 #include "variadic_arg_helpers.hpp"
 
-namespace aks 
+namespace aks
 {
 	namespace tuple_utils
 	{
-
-
 		// index_sequence implementation since VS2013 doesn't have it yet
 		template <size_t... Ints> class index_sequence {
 		public:
@@ -116,9 +114,7 @@ namespace aks
 
 		template<typename T, size_t N>
 		using tuple_of_length = typename detail::tuple_of_length<T, N>::type;
-
 	}
 }
 
 #endif // !__tuple_helper_utilities_hpp__
-

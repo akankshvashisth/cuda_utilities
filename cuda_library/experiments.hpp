@@ -4,4 +4,3 @@
 int run_experiments();
 
 #endif // !__experiments_hpp__
-

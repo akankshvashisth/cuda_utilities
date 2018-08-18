@@ -64,7 +64,6 @@ namespace aks
 				return a;
 			}
 		};
-
 	}
 
 	struct token
@@ -88,7 +87,7 @@ namespace aks
 		template<typename _V, size_t _D>
 		AKS_FUNCTION_PREFIX_ATTR const_multi_dim_iterator(multi_dim_vector<_V, _D> const& view, size_type const * const dims, size_type const moving_dimension)
 			: m_data_pointer(&iterator_detail::get_element(view, dims))
-			, m_increment(multi_dim_vector<_V, _D>::dimensions > moving_dimension+1 ? view.m_products[moving_dimension+1] : 1){}
+			, m_increment(multi_dim_vector<_V, _D>::dimensions > moving_dimension + 1 ? view.m_products[moving_dimension + 1] : 1) {}
 
 		AKS_FUNCTION_PREFIX_ATTR const_value_type& operator*() { return *m_data_pointer; }
 		AKS_FUNCTION_PREFIX_ATTR const_multi_dim_iterator& operator++() { m_data_pointer += m_increment; return *this; }
@@ -124,7 +123,7 @@ namespace aks
 		AKS_FUNCTION_PREFIX_ATTR multi_dim_iterator& operator+=(size_type const increment) { m_data_pointer += m_increment * increment; return *this; }
 		AKS_FUNCTION_PREFIX_ATTR multi_dim_iterator& operator-=(size_type const increment) { m_data_pointer -= m_increment * increment; return *this; }
 		AKS_FUNCTION_PREFIX_ATTR operator const_multi_dim_iterator<value_type>() const
-		{ 
+		{
 			const_multi_dim_iterator<value_type> ret;
 			ret.m_data_pointer = this->m_data_pointer;
 			ret.m_increment = this->m_increment;
@@ -134,7 +133,6 @@ namespace aks
 		pointer_type m_data_pointer;
 		size_type m_increment;
 	};
-
 
 	template<typename value_type, size_t dimensions, typename... args>
 	AKS_FUNCTION_PREFIX_ATTR auto begin(multi_dim_vector<value_type, dimensions>& view, args... as)
@@ -229,8 +227,6 @@ namespace aks
 	{
 		return !(lhs == rhs);
 	}
-	
 }
 
 #endif // !__multi_dim_vector_iterator_hpp__
-

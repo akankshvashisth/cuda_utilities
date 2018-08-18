@@ -34,8 +34,8 @@ namespace aks
 		template<size_t N, typename T, typename... Ts>
 		AKS_FUNCTION_PREFIX_ATTR size_t index(size_t const max_dims[N], T idx, Ts... ts)
 		{
-			static_assert(sizeof...(ts)+1 <= N, "failed");
-			auto const begin = N - (sizeof...(ts)+1) + 1; //use the next one.
+			static_assert(sizeof...(ts) + 1 <= N, "failed");
+			auto const begin = N - (sizeof...(ts) + 1) + 1; //use the next one.
 			auto const mult = multiply(&max_dims[begin], &max_dims[N]);
 			auto const add = index<N>(max_dims, ts...);
 			//assert(idx < max_dims[begin - 1]);
@@ -53,9 +53,9 @@ namespace aks
 		template<size_t N, typename T, typename... Ts>
 		AKS_FUNCTION_PREFIX_ATTR size_t index_with_products(size_t const max_dims[N], T idx, Ts... ts)
 		{
-			static_assert(sizeof...(ts)+1 <= N, "failed");
+			static_assert(sizeof...(ts) + 1 <= N, "failed");
 			auto const add = index_with_products<N>(max_dims, ts...);
-			auto const begin = N - (sizeof...(ts)+1) + 1; //use the next one.
+			auto const begin = N - (sizeof...(ts) + 1) + 1; //use the next one.
 			auto const mult = max_dims[begin];
 			//assert(idx < max_dims[begin - 1]);
 			auto const ret = idx * mult + add;
@@ -65,7 +65,6 @@ namespace aks
 
 		AKS_FUNCTION_PREFIX_ATTR inline void copy(size_t* /*data*/)
 		{
-
 		}
 
 		template<typename T, typename... Ts>
@@ -77,7 +76,6 @@ namespace aks
 
 		AKS_FUNCTION_PREFIX_ATTR inline void product(size_t* /*data*/)
 		{
-
 		}
 
 		template<typename T, typename... Ts>
@@ -106,7 +104,6 @@ namespace aks
 				return products[M];
 			}
 		};
-
 	}
 
 	template<typename _value_type, std::size_t _dimensions>
@@ -137,7 +134,7 @@ namespace aks
 			for (size_t i = 0; i < dimensions; ++i)
 				m_products[i] = other.m_products[i];
 		}
-	
+
 		template<typename... Ds>
 		AKS_FUNCTION_PREFIX_ATTR reference operator()(Ds... idxs) { return data()[index(idxs...)]; }
 
@@ -182,12 +179,12 @@ namespace aks
 			return multi_dim_vector_detail::max_dimension<dimensions - N>::template apply<N>(m_products);
 		}
 
-		template<typename T>	
+		template<typename T>
 		AKS_FUNCTION_PREFIX_ATTR bool operator==(multi_dim_vector<T, dimensions> const& other) const
 		{
 			if (this->data() != other.data())
 				return false;
-			
+
 			for (size_t i = 0; i < dimensions; ++i)
 				if (this->m_products[i] != other.m_products[i])
 					return false;
@@ -226,21 +223,21 @@ namespace aks
 	};
 
 	template<size_t X, typename T, size_t N>
-	AKS_FUNCTION_PREFIX_ATTR size_t get_max_dim(multi_dim_vector<T, N> const& v) 
-	{ 
-		return v.template max_dimension<X>(); 
+	AKS_FUNCTION_PREFIX_ATTR size_t get_max_dim(multi_dim_vector<T, N> const& v)
+	{
+		return v.template max_dimension<X>();
 	}
 
 	template<typename X, typename T, size_t N>
-	AKS_FUNCTION_PREFIX_ATTR size_t get_max_dim(multi_dim_vector<T, N> const& v) 
-	{ 
-		return v.template max_dimension<X::value>(); 
+	AKS_FUNCTION_PREFIX_ATTR size_t get_max_dim(multi_dim_vector<T, N> const& v)
+	{
+		return v.template max_dimension<X::value>();
 	}
 
 	template<typename T, typename... Ns>
 	AKS_FUNCTION_PREFIX_ATTR auto make_multi_dim_vector(T* data, Ns... ns)->multi_dim_vector <T, sizeof...(Ns)>
-	{ 
-		return multi_dim_vector <T, sizeof...(Ns)>(data, ns...); 
+	{
+		return multi_dim_vector <T, sizeof...(Ns)>(data, ns...);
 	}
 
 	template<typename T, typename U, size_t N, size_t M>
@@ -263,9 +260,9 @@ namespace aks
 //        </ArrayItems> -->
 //    </Expand>
 //  </Type>
-//  
+//
 //  <Type Name="multi_dim_vector&lt;*,2&gt;">
-//    <DisplayString>{{ size={{{m_max_dim},{m_data.m_max_dim}}} }</DisplayString>    
+//    <DisplayString>{{ size={{{m_max_dim},{m_data.m_max_dim}}} }</DisplayString>
 //    <Expand>
 //        <Item Name="[size 0]">m_max_dim</Item>
 //        <Item Name="[size 1]">m_data.m_max_dim</Item>
@@ -276,9 +273,9 @@ namespace aks
 //        </ArrayItems> -->
 //    </Expand>
 //  </Type>
-//  
+//
 //  <Type Name="multi_dim_vector&lt;*,3&gt;">
-//    <DisplayString>{{ size={{{m_max_dim},{m_data.m_max_dim},{m_data.m_data.m_max_dim}}} }}</DisplayString>    
+//    <DisplayString>{{ size={{{m_max_dim},{m_data.m_max_dim},{m_data.m_data.m_max_dim}}} }}</DisplayString>
 //    <Expand>
 //        <Item Name="[size 0]">m_max_dim</Item>
 //        <Item Name="[size 1]">m_data.m_max_dim</Item>
@@ -288,11 +285,11 @@ namespace aks
 //            <Size>m_max_dim * m_data.m_max_dim * m_data.m_data.m_max_dim</Size>
 //            <ValuePointer>m_data.m_data.m_data</ValuePointer>
 //        </ArrayItems> -->
-//    </Expand>    
+//    </Expand>
 //  </Type>
-//  
+//
 //  <Type Name="multi_dim_vector&lt;*,4&gt;">
-//    <DisplayString>{{ size={{{m_max_dim},{m_data.m_max_dim},{m_data.m_data.m_max_dim},{m_data.m_data.m_data.m_max_dim}}} }}</DisplayString>  
+//    <DisplayString>{{ size={{{m_max_dim},{m_data.m_max_dim},{m_data.m_data.m_max_dim},{m_data.m_data.m_data.m_max_dim}}} }}</DisplayString>
 //    <Expand>
 //        <Item Name="[size 0]">m_max_dim</Item>
 //        <Item Name="[size 1]">m_data.m_max_dim</Item>
@@ -303,7 +300,7 @@ namespace aks
 //            <Size>m_max_dim * m_data.m_max_dim * m_data.m_data.m_max_dim * m_data.m_data.m_data.m_max_dim</Size>
 //            <ValuePointer>m_data.m_data.m_data.m_data</ValuePointer>
 //        </ArrayItems> -->
-//    </Expand>       
+//    </Expand>
 //  </Type>
 //</AutoVisualizer>
 
