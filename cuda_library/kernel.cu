@@ -246,6 +246,10 @@ void blas_checks()
 	}
 }
 
+#define TEST_PREAMBLE() aks::cuda_context ctxt(aks::cuda_device(0)); \
+ aks::cuda_sync_context sync; \
+ std::cout << "---" << testNum++ << "---\n";
+
 int operatorCheck()
 {
 	aks::host_multi_dim_vector<double, 2> host_in(30, 10);
@@ -456,6 +460,7 @@ int reduceDimCheck()
 		}
 		aks::cuda_multi_dim_vector<int, 3> out1(3, 10, 9);
 		aks::cuda_multi_dim_vector<int, 4> in = aks::to_device(host_x);
+		host_x >> in;
 		aks::reduceDim(out1.view(), in.cview(), thrust::plus<int>(), 2);
 
 		aks::cuda_multi_dim_vector<int, 2> out2(3, 10);
@@ -617,7 +622,7 @@ int reduceDimCheck()
 				std::cout << "---" << testNum++ << "---\n";
 				auto Bvec(testCase());
 				auto Bcuda = aks::to_device(Bvec);
-				aks::sortAxis(Bcuda, 0);
+				aks::sortAxis(Bcuda, 0, thrust::less<double>());
 				Bvec << Bcuda;
 				print2D(Bvec.view());
 			}
@@ -625,7 +630,23 @@ int reduceDimCheck()
 				std::cout << "---" << testNum++ << "---\n";
 				auto Bvec(testCase());
 				auto Bcuda = aks::to_device(Bvec);
-				aks::sortAxis(Bcuda, 1);
+				aks::sortAxis(Bcuda, 1, thrust::less<double>());
+				Bvec << Bcuda;
+				print2D(Bvec.view());
+			}
+			{
+				std::cout << "---" << testNum++ << "---\n";
+				auto Bvec(testCase());
+				auto Bcuda = aks::to_device(Bvec);
+				aks::sortAxis(Bcuda, 0, thrust::greater<double>());
+				Bvec << Bcuda;
+				print2D(Bvec.view());
+			}
+			{
+				std::cout << "---" << testNum++ << "---\n";
+				auto Bvec(testCase());
+				auto Bcuda = aks::to_device(Bvec);
+				aks::sortAxis(Bcuda, 1, thrust::greater<double>());
 				Bvec << Bcuda;
 				print2D(Bvec.view());
 			}
@@ -658,7 +679,7 @@ int reduceDimCheck()
 				std::cout << "---" << testNum++ << "---\n";
 				auto Bvec(testCase2());
 				auto Bcuda = aks::to_device(Bvec);
-				aks::sortAxis(Bcuda, 0);
+				aks::sortAxis(Bcuda, 0, thrust::less<double>());
 				Bvec << Bcuda;
 				print2D(Bvec.view());
 			}
@@ -666,7 +687,7 @@ int reduceDimCheck()
 				std::cout << "---" << testNum++ << "---\n";
 				auto Bvec(testCase2());
 				auto Bcuda = aks::to_device(Bvec);
-				aks::sortAxis(Bcuda, 1);
+				aks::sortAxis(Bcuda, 1, thrust::less<double>());
 				Bvec << Bcuda;
 				print2D(Bvec.view());
 			}
@@ -683,25 +704,25 @@ int main()
 	blas_checks();
 	//   //return 0;
 	   //main2();
-	   compile_time_differentiation_tests();
-	   run_experiments();
-	   //check2();
+	compile_time_differentiation_tests();
+	run_experiments();
+	//check2();
 
-	   //aks::cuda_context ctxt;
-	
-	   std::vector<int> const a = { 1, 2, 3, 4, 5 };
-	   std::vector<int> const b = { 10, 20, 30, 40, 50 };
-	   std::vector<int> c;
+	//aks::cuda_context ctxt;
 
-	   // Add vectors in parallel.
-	   cudaError_t cudaStatus = addWithCuda2(c, a, b);
-	   if (cudaStatus != cudaSuccess) {
-	       fprintf(stderr, "addWithCuda failed!");
-	       return 1;
-	   }
+	std::vector<int> const a = { 1, 2, 3, 4, 5 };
+	std::vector<int> const b = { 10, 20, 30, 40, 50 };
+	std::vector<int> c;
 
-	   printf("{1,2,3,4,5} + {10,20,30,40,50} = {%d,%d,%d,%d,%d}\n",
-	       c[0], c[1], c[2], c[3], c[4]);
+	// Add vectors in parallel.
+	cudaError_t cudaStatus = addWithCuda2(c, a, b);
+	if (cudaStatus != cudaSuccess) {
+		fprintf(stderr, "addWithCuda failed!");
+		return 1;
+	}
+
+	printf("{1,2,3,4,5} + {10,20,30,40,50} = {%d,%d,%d,%d,%d}\n",
+		c[0], c[1], c[2], c[3], c[4]);
 
 	return 0;
 }
@@ -717,9 +738,9 @@ cudaError_t addWithCuda2(std::vector<int>& c, std::vector<int> const& a, std::ve
 	//cuda_pointer<int const> db(size, b);
 	cuda_pointer<int> dc(a.size());
 	//dc.deep_copy_from(db);
-	auto const ma = make_multi_dim_vector(da.data(), da.size());
-	auto const mb = make_multi_dim_vector(db.data(), da.size());
-	auto mc = make_multi_dim_vector(dc.data(), da.size());
+	auto const ma = make_multi_dim_vector(aks::e_device_type::DEVICE, da.data(), da.size());
+	auto const mb = make_multi_dim_vector(aks::e_device_type::DEVICE, db.data(), da.size());
+	auto mc = make_multi_dim_vector(aks::e_device_type::DEVICE, dc.data(), da.size());
 
 	{
 		cuda_sync_context sync_ctxt;
@@ -753,9 +774,9 @@ cudaError_t addWithCuda(std::vector<int>& c, std::vector<int> const& a, std::vec
 	//aks::cuda_pointer<int const> db(size, b);
 	aks::cuda_pointer<int> dc(a.size());
 	//dc.deep_copy_from(db);
-	aks::multi_dim_vector<int const, 1> const ma = aks::make_multi_dim_vector(da.data(), da.size());
-	aks::multi_dim_vector<int const, 1> const mb = aks::make_multi_dim_vector(db.data(), da.size());
-	aks::multi_dim_vector<int, 1> mc = aks::make_multi_dim_vector(dc.data(), da.size());
+	aks::multi_dim_vector<int const, 1> const ma = aks::make_multi_dim_vector(aks::e_device_type::DEVICE, da.data(), da.size());
+	aks::multi_dim_vector<int const, 1> const mb = aks::make_multi_dim_vector(aks::e_device_type::DEVICE, db.data(), da.size());
+	aks::multi_dim_vector<int, 1> mc = aks::make_multi_dim_vector(aks::e_device_type::DEVICE, dc.data(), da.size());
 
 	{
 		aks::cuda_sync_context sync_ctxt;

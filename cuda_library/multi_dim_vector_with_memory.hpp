@@ -10,25 +10,28 @@ namespace aks
 	namespace detail
 	{
 		template<typename V, size_t... Is, typename... Ts>
-		multi_dim_vector<V, sizeof...(Ts)> make_multi_dim_vector_impl(V* v, ::aks::tuple_utils::index_sequence<Is...>, std::tuple<Ts...> const& t)
+		multi_dim_vector<V, sizeof...(Ts)> make_multi_dim_vector_impl(e_device_type d, V* v, ::aks::tuple_utils::index_sequence<Is...>, std::tuple<Ts...> const& t)
 		{
-			return ::aks::make_multi_dim_vector(v, std::get<Is>(t)...);
+			return ::aks::make_multi_dim_vector(d, v, std::get<Is>(t)...);
 		}
 
 		template<typename V, typename... Ts>
-		multi_dim_vector<V, sizeof...(Ts)> make_multi_dim_vector(V* v, std::tuple<Ts...> const& t)
+		multi_dim_vector<V, sizeof...(Ts)> make_multi_dim_vector(e_device_type d, V* v, std::tuple<Ts...> const& t)
 		{
-			return make_multi_dim_vector_impl(v, ::aks::tuple_utils::make_index_sequence<sizeof...(Ts)>(), t);
+			return make_multi_dim_vector_impl(d, v, ::aks::tuple_utils::make_index_sequence<sizeof...(Ts)>(), t);
 		}
 
-		template<typename _T, size_t _N, typename _Storage>
+		template<typename _T, size_t _N, typename _Storage, int _e_device_type>
 		struct multi_dim_vector_with_memory
 		{
 			typedef _T value_type;
 			typedef value_type const const_value_type;
 			typedef value_type* value_type_pointer;
 			typedef const_value_type * const_value_type_pointer;
-			enum { dimensions = _N };
+			enum {
+				dimensions = _N,
+				device_type = _e_device_type
+			};
 
 			typedef _Storage storage_type;
 			typedef ::aks::tuple_utils::tuple_of_length<size_t, dimensions> dimensions_type;
@@ -67,12 +70,18 @@ namespace aks
 
 			multi_dim_vector_with_memory(multi_dim_vector_with_memory&& other) : m_data(std::move(other.m_data)), m_dimensions(other.m_dimensions) {}
 			multi_dim_vector_with_memory(multi_dim_vector_with_memory&) = delete;
-			//multi_dim_vector_with_memory& operator=(multi_dim_vector_with_memory&) = delete;
+			multi_dim_vector_with_memory& operator=(multi_dim_vector_with_memory&) = delete;
+			multi_dim_vector_with_memory& operator=(multi_dim_vector_with_memory&& other)
+			{
+				m_data = std::move(other.m_data);
+				m_dimensions = other.m_dimensions;
+				return *this;
+			}
 
-			view_type       view() { return detail::make_multi_dim_vector(m_data.data(), m_dimensions); }
-			const_view_type view() const { return detail::make_multi_dim_vector(static_cast<const_value_type const*>(m_data.data()), m_dimensions); }
+			view_type       view() { return detail::make_multi_dim_vector(e_device_type(device_type), m_data.data(), m_dimensions); }
+			const_view_type view() const { return detail::make_multi_dim_vector(e_device_type(device_type), static_cast<const_value_type const*>(m_data.data()), m_dimensions); }
 
-			const_view_type cview() const { return detail::make_multi_dim_vector(static_cast<const_value_type const*>(m_data.data()), m_dimensions); }
+			const_view_type cview() const { return detail::make_multi_dim_vector(e_device_type(device_type), static_cast<const_value_type const*>(m_data.data()), m_dimensions); }
 
 			storage_type m_data;
 			dimensions_type m_dimensions;

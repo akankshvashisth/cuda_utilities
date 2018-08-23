@@ -9,10 +9,10 @@
 namespace aks
 {
 	template<typename T, size_t N>
-	using host_multi_dim_vector = aks::detail::multi_dim_vector_with_memory<T, N, std::vector<T>>;
+	using host_multi_dim_vector = aks::detail::multi_dim_vector_with_memory<T, N, std::vector<T>, e_device_type::HOST>;
 
 	template<typename T, size_t N>
-	using cuda_multi_dim_vector = aks::detail::multi_dim_vector_with_memory<T, N, aks::cuda_pointer<T>>;
+	using cuda_multi_dim_vector = aks::detail::multi_dim_vector_with_memory<T, N, aks::cuda_pointer<T>, e_device_type::DEVICE>;
 
 	template<typename T, size_t N>
 	auto& operator<<(host_multi_dim_vector<T, N>& host, cuda_multi_dim_vector<T, N> const& device)
@@ -34,6 +34,13 @@ namespace aks
 	cuda_multi_dim_vector<T, N> to_device(host_multi_dim_vector<T, N> const& host)
 	{
 		return{ host.view().data(), host.m_dimensions };
+	}
+
+	template<typename T, size_t N>
+	auto& operator>>(host_multi_dim_vector<T, N> const& host, cuda_multi_dim_vector<T, N>& device)
+	{
+		device = std::move(to_device(host));
+		return device;
 	}
 }
 

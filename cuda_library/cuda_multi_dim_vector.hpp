@@ -10,6 +10,13 @@
 
 namespace aks
 {
+	enum e_device_type
+	{
+		HOST,
+		DEVICE,
+		UNKNOWN
+	};
+
 	template<typename _value_type, std::size_t _dimensions>
 	struct multi_dim_vector;
 
@@ -122,14 +129,14 @@ namespace aks
 		enum { dimensions = _dimensions };
 
 		template<typename... Ds>
-		AKS_FUNCTION_PREFIX_ATTR multi_dim_vector(pointer data, Ds... dims) : m_data(data), m_products()
+		AKS_FUNCTION_PREFIX_ATTR multi_dim_vector(e_device_type device_type, pointer data, Ds... dims) : m_device_type(device_type), m_data(data), m_products()
 		{
 			static_assert(dimensions == sizeof...(dims), "incorrect number of arguments provided");
 			multi_dim_vector_detail::product(m_products, dims...);
 		}
 
 		template<typename T>
-		AKS_FUNCTION_PREFIX_ATTR multi_dim_vector(multi_dim_vector<T, dimensions> const& other) : m_data(other.m_data), m_products()
+		AKS_FUNCTION_PREFIX_ATTR multi_dim_vector(multi_dim_vector<T, dimensions> const& other) : m_device_type(other.m_device_type), m_data(other.m_data), m_products()
 		{
 			for (size_t i = 0; i < dimensions; ++i)
 				m_products[i] = other.m_products[i];
@@ -179,9 +186,17 @@ namespace aks
 			return multi_dim_vector_detail::max_dimension<dimensions - N>::template apply<N>(m_products);
 		}
 
+		AKS_FUNCTION_PREFIX_ATTR e_device_type device_type() const
+		{
+			return this - m_device_type;
+		}
+
 		template<typename T>
 		AKS_FUNCTION_PREFIX_ATTR bool operator==(multi_dim_vector<T, dimensions> const& other) const
 		{
+			if (this - device_type() != other.device_type())
+				return false;
+
 			if (this->data() != other.data())
 				return false;
 
@@ -209,6 +224,7 @@ namespace aks
 			return ret;
 		}
 
+		e_device_type m_device_type;
 		pointer m_data;
 		size_type m_products[dimensions];
 
@@ -235,9 +251,9 @@ namespace aks
 	}
 
 	template<typename T, typename... Ns>
-	AKS_FUNCTION_PREFIX_ATTR auto make_multi_dim_vector(T* data, Ns... ns)->multi_dim_vector <T, sizeof...(Ns)>
+	AKS_FUNCTION_PREFIX_ATTR auto make_multi_dim_vector(e_device_type d, T* data, Ns... ns) -> multi_dim_vector < T, sizeof...(Ns)>
 	{
-		return multi_dim_vector <T, sizeof...(Ns)>(data, ns...);
+		return multi_dim_vector<T, sizeof...(Ns)>(d, data, ns...);
 	}
 
 	template<typename T, typename U, size_t N, size_t M>

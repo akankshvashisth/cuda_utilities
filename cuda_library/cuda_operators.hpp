@@ -491,8 +491,8 @@ namespace aks
 		}
 	}
 
-	template<typename T>
-	void sortAxis(cuda_multi_dim_vector<T, 2>& a, int axis)
+	template<typename T, typename Comp>
+	void sortAxis(cuda_multi_dim_vector<T, 2> & a, int axis, Comp comp)
 	{
 		using thrust_utils::begin;
 		using thrust_utils::end;
@@ -506,13 +506,13 @@ namespace aks
 			detail_sort::fillAxis1 << <std::get<0>(dims), std::get<1>(dims) >> > (temp.view());
 		};
 
-		thrust::stable_sort_by_key(begin(a.m_data), end(a.m_data), begin(temp.m_data));
+		thrust::stable_sort_by_key(begin(a.m_data), end(a.m_data), begin(temp.m_data), comp);
 		thrust::stable_sort_by_key(begin(temp.m_data), end(temp.m_data), begin(a.m_data));
 
 		if (axis == 0) {
-			cuda_multi_dim_vector<int, 2> map(get_max_dim<0>(a.view()), get_max_dim<1>(a.view()));
-			detail_sort::fillIndices << <std::get<0>(dims), std::get<1>(dims) >> > (map.view());
-			thrust::scatter(begin(a.m_data), end(a.m_data), begin(map.m_data), begin(a.m_data));
+			//cuda_multi_dim_vector<int, 2> map(get_max_dim<0>(a.view()), get_max_dim<1>(a.view()));
+			detail_sort::fillIndices << <std::get<0>(dims), std::get<1>(dims) >> > (temp.view());
+			thrust::scatter(begin(a.m_data), end(a.m_data), begin(temp.m_data), begin(a.m_data));
 		}
 		//unaryOp(a.view(), temp.cview(), [] AKS_FUNCTION_PREFIX_ATTR(int x) { return x; });
 	}

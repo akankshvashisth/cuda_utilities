@@ -46,8 +46,7 @@ namespace aks
 
 		cuda_pointer(cuda_pointer&& other) : m_data(other.data()), m_size(other.size()), m_status(other.status())
 		{
-			other.m_data = nullptr;
-			other.reset();
+			other.reset_without_free();
 			assert(!has_error_occurred());
 		}
 
@@ -57,7 +56,7 @@ namespace aks
 			{
 				reset();
 				copy(other);
-				other.reset();
+				other.reset_without_free();
 			}
 			assert(!has_error_occurred());
 			return *this;
@@ -91,19 +90,26 @@ namespace aks
 
 		~cuda_pointer()
 		{
-			reset();
+			if (m_data) {
+				reset();
+			}
 		}
 
 	private:
 		cuda_pointer(cuda_pointer&) = delete;
 		cuda_pointer& operator=(cuda_pointer&) = delete;
 
-		void reset()
+		void reset_without_free()
 		{
-			cudaFree((void*)m_data);
 			m_data = nullptr;
 			m_size = 0;
 			m_status = cudaSuccess;
+		}
+
+		void reset()
+		{
+			cudaFree((void*)m_data);
+			reset_without_free();
 		}
 
 		void allocate()
