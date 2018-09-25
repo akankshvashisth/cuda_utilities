@@ -52,6 +52,15 @@ namespace aks
 		}
 	}
 
+	template<typename Func, typename V, size_t N, typename... Us>
+	__global__ void naryOpKernel(multi_dim_vector<V, N> c, Func f, multi_dim_vector<Us const, N>... a)
+	{
+		for (auto i : grid_stride_range::x(size_t(0), c.total_size()))
+		{
+			c.data()[i] = f(a.data()[i]...);
+		}
+	}
+
 	template<typename T, typename V, typename Func, size_t N>
 	__global__ void reduceDim0Kernel(multi_dim_vector<T, N - 1> c, multi_dim_vector<V const, N> a, Func f);
 
@@ -456,6 +465,39 @@ namespace aks
 		if (is_same_shape(ma, mb)) {
 			auto dims = calculateDims(ma.total_size(), 1, 1);
 			binaryOpInplaceKernel << <std::get<0>(dims), std::get<1>(dims) >> > (ma, mb, f);
+		}
+	}
+
+	namespace operator_detail
+	{
+		template<typename Func, typename T>
+		bool test_equal(Func f, T a)
+		{
+			return true;
+		}
+
+		template<typename Func, typename T, typename U, typename... Ts>
+		bool test_equal(Func f, T a, U b, Ts... ts)
+		{
+			return f(a, b) && test_equal(f, a, ts...);
+		}
+
+		struct is_same_shape_wrapper
+		{
+			template<typename T, typename U>
+			AKS_FUNCTION_PREFIX_ATTR bool operator()(T const& a, U const& b) const
+			{
+				return is_same_shape(a, b);
+			}
+		};
+	};
+
+	template<typename Func, typename V, size_t N, typename... Us>
+	void naryOp(multi_dim_vector<V, N> mc, Func f, multi_dim_vector<Us const, N>... ma)
+	{
+		if (operator_detail::test_equal(operator_detail::is_same_shape_wrapper(), mc, ma...)) {
+			auto dims = calculateDims(mc.total_size(), 1, 1);
+			naryOpKernel << <std::get<0>(dims), std::get<1>(dims) >> > (mc, f, ma...);
 		}
 	}
 
