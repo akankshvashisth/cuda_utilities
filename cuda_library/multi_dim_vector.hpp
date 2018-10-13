@@ -4,6 +4,7 @@
 #include "cuda_multi_dim_vector.hpp"
 #include "multi_dim_vector_with_memory.hpp"
 #include "cuda_pointer.hpp"
+#include "cuda_pointer_vector_utils.hpp"
 #include <vector>
 
 namespace aks
@@ -18,7 +19,7 @@ namespace aks
 	auto& operator<<(host_multi_dim_vector<T, N>& host, cuda_multi_dim_vector<T, N> const& device)
 	{
 		host.m_dimensions = device.m_dimensions;
-		host.m_data = aks::from_cuda_pointer(device.m_data);
+		host.m_data = from_cuda_pointer(device.m_data);
 		return host;
 	}
 

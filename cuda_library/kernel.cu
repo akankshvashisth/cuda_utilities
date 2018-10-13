@@ -27,6 +27,39 @@
 #include "cuda_blas_level_2.hpp"
 #include "cuda_blas_level_3.hpp"
 #include "cuda_operators.hpp"
+#include "cuda_object.hpp"
+
+struct vec
+{
+	float x, y, z, w;
+};
+
+void object_check()
+{
+	//gpu_error_check(cudaError::cudaErrorAssert);
+	using namespace aks;
+	vec a = { 1,2,3,4 };
+	vec b = { 5,6,7,8 };
+	host_object<vec> ha(a);
+	host_object<vec> hb(b);
+	object_view<vec> va = ha.view();
+	object_view<vec> vb = hb.view();
+	object_view<vec const> vav = ha.view();
+	object_view<vec const> vbv = hb.view();
+	object_view<vec const> vacv = ha.cview();
+	object_view<vec const> vbcv = hb.cview();
+	host_object<vec> const& cha = ha;
+	host_object<vec> const& chb = hb;
+	object_view<vec const> cvav = cha.view();
+	object_view<vec const> cvbv = chb.view();
+	object_view<vec const> cvacv = cha.cview();
+	object_view<vec const> cvbcv = chb.cview();
+	auto& a0 = va->w;
+	auto& a1 = (*vb).x;
+	auto& a2 = vav->x;
+	auto& a3 = vacv->x;
+	std::cout << a0 << a1 << a2 << a3 << std::endl;
+}
 
 cudaError_t addWithCuda(std::vector<int>& c, std::vector<int> const& a, std::vector<int> const& b);
 cudaError_t addWithCuda2(std::vector<int>& c, std::vector<int> const& a, std::vector<int> const& b);
@@ -252,8 +285,8 @@ void blas_checks()
 
 int operatorCheck()
 {
-	aks::host_multi_dim_vector<double, 2> host_in(30, 10);
-	aks::host_multi_dim_vector<double, 2> host_out(30, 10);
+	aks::host_multi_dim_vector<double, 2> host_in(3000, 5000);
+	aks::host_multi_dim_vector<double, 2> host_out(3000, 5000);
 
 	auto in_ = host_in.view();
 	auto out_ = host_out.view();
@@ -300,6 +333,30 @@ int operatorCheck()
 	std::cout << "---" << testNum++ << "---\n";
 	aks::unaryOp(vec_out.view(), vec_out.cview(), [] AKS_FUNCTION_PREFIX_ATTR(double x) { return x * -1; });
 	host_out << vec_out;
+	print2D(host_out.cview());
+	std::cout << "---" << testNum++ << "---\n";
+	aks::naryOp(vec_out.view(), [] AKS_FUNCTION_PREFIX_ATTR() { return 1.0; });
+	host_out << vec_out;
+	print2D(host_out.cview());
+	auto const me = vec_out.cview();
+	int const maxX = aks::get_max_dim<0>(me);
+	int const maxY = aks::get_max_dim<1>(me);
+	int const kernelX = 3;
+	int const kernelY = 3;
+	aks::cuda_multi_dim_vector<double, 2> vec_out2(vec_out.m_dimensions);
+	aks::naryOpWithIndex(vec_out2.view(), [me, maxX, maxY, kernelX, kernelY] AKS_FUNCTION_PREFIX_ATTR(int i, int j, double x) {
+		x = 0;
+		for (int m = i - kernelX; m <= i + kernelX; ++m)
+			for (int n = j - kernelY; n <= j + kernelY; ++n)
+			{
+				if (!(0 > m || m >= maxX) && !(0 > n || n >= maxY))
+				{
+					x += me(m, n);
+				}
+			}
+		return x;
+	}, vec_out.cview());
+	host_out << vec_out2;
 	print2D(host_out.cview());
 
 	return 0;
@@ -715,6 +772,7 @@ int reduceDimCheck()
 
 int main()
 {
+	object_check();
 	operatorCheck();
 	reduceDimCheck();
 	blas_checks();

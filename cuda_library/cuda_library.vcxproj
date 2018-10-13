@@ -112,7 +112,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
       <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
       <PtxAsOptionV>true</PtxAsOptionV>
       <Optimization>Od</Optimization>
-      <AdditionalOptions>--expt-extended-lambda %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>--expt-extended-lambda --verbose --resource-usage %(AdditionalOptions)</AdditionalOptions>
     </CudaCompile>
     <CudaLink>
       <GPUDebugInfo>true</GPUDebugInfo>
@@ -161,7 +161,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
       <CodeGeneration>compute_52,sm_52</CodeGeneration>
-      <AdditionalOptions>--expt-extended-lambda %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>--expt-extended-lambda --verbose --resource-usage %(AdditionalOptions)</AdditionalOptions>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -178,6 +178,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <ClInclude Include="cuda_context.hpp" />
     <ClInclude Include="cuda_multi_dim_vector.hpp" />
     <ClInclude Include="cuda_multi_dim_vector_thrust_utils.hpp" />
+    <ClInclude Include="cuda_object.hpp" />
     <ClInclude Include="cuda_pointer.hpp" />
     <ClInclude Include="cuda_pointer_thrust_utils.hpp" />
     <ClInclude Include="cuda_pointer_vector_utils.hpp" />
