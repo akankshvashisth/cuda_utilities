@@ -330,10 +330,27 @@ namespace aks
 
 	std::tuple<dim3, dim3> calculateDims(int x, int y, int z)
 	{
-		auto blockDimCalc = [](int a) { return a > 1024 ? a / 1024 : 1; };
-		auto threadDimCalc = [](int a) { return a <= 1024 ? a : 1024; };
-		dim3 blockDim(blockDimCalc(x), blockDimCalc(y), blockDimCalc(z));
-		dim3 threadDim(threadDimCalc(x), threadDimCalc(y), threadDimCalc(z));
+		auto threadDimCalc = [&](int maxThreadCount) {
+			dim3 ret;
+			int maxThreadCountLeft = maxThreadCount;
+			ret.x = x > maxThreadCountLeft ? maxThreadCountLeft : x;
+			maxThreadCountLeft /= ret.x;
+			ret.y = y > maxThreadCountLeft ? maxThreadCountLeft : y;
+			maxThreadCountLeft /= ret.y;
+			ret.z = z > maxThreadCountLeft ? maxThreadCountLeft : z;
+			return ret;
+		};
+		auto blockDimCalc = [&](dim3 threads) {
+			dim3 ret;
+			ret.x = x / threads.x + int(x%threads.x > 0);
+			ret.y = y / threads.y + int(y%threads.y > 0);
+			ret.z = z / threads.z + int(z%threads.z > 0);
+			return ret;
+		};
+
+		dim3 threadDim = threadDimCalc(1024);
+		dim3 blockDim = blockDimCalc(threadDim);
+
 		return { blockDim, threadDim };
 	}
 
@@ -612,11 +629,27 @@ namespace aks
 		gpu_error_check(last_status());
 	}
 
+	std::tuple<dim3, dim3> calcDims(point<size_t, 1> tile)
+	{
+		return calculateDims(tile.x, 1, 1);
+	}
+
+	std::tuple<dim3, dim3> calcDims(point<size_t, 2> tile)
+	{
+		return calculateDims(tile.x, tile.y, 1);
+	}
+
+	template<size_t N>
+	std::tuple<dim3, dim3> calcDims(point<size_t, N> tile)
+	{
+		return calculateDims(tile.x, tile.y, tile.z);
+	}
+
 	template<typename Func, typename V, size_t N, typename... Us>
 	void naryOpWithIndexTiled(multi_dim_vector<V, N> mc, point<size_t, N> tile, point<size_t, N> start, Func f, multi_dim_vector<Us const, N>... ma)
 	{
 		if (operator_detail::test_equal(operator_detail::is_same_shape_wrapper(), mc, ma...)) {
-			std::tuple<dim3, dim3> dims = calculateDims(tile.x, 1, 1);
+			std::tuple<dim3, dim3> dims = calcDims(tile);
 			naryOpKernelWithIndexTiled << <std::get<0>(dims), std::get<1>(dims) >> > (mc, tile, start, f, ma...);
 			//naryOpKernelWithIndex << <1, 1 >> > (mc, f, ma...);
 		}
