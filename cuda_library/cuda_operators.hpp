@@ -92,6 +92,26 @@ namespace aks
 	}
 
 	template<typename Func, typename V, typename... Us>
+	__global__ void naryOpKernelWithIndexTiled(multi_dim_vector<V, 3> c, point<size_t, 3> tile, point<size_t, 3> start, Func f, multi_dim_vector<Us const, 3>... a)
+	{
+		for (auto ix : grid_stride_range::x(size_t(0), tile.x))
+			for (auto jy : grid_stride_range::y(size_t(0), tile.y)) {
+				for (auto kz : grid_stride_range::z(size_t(0), tile.z)) {
+					auto i = start.x + ix;
+					auto j = start.y + jy;
+					auto k = start.z + kz;
+					auto safe_i = i < get_max_dim< 0 >(c);
+					auto safe_j = j < get_max_dim< 1 >(c);
+					auto safe_k = k < get_max_dim< 2 >(c);
+					if (safe_i && safe_j && safe_k)
+					{
+						c(i, j, k) = f(i, j, k); // , a(i, j, k)...);
+					}
+				}
+			}
+	}
+
+	template<typename Func, typename V, typename... Us>
 	__global__ void naryOpKernelWithIndex(multi_dim_vector<V, 1> c, Func f, multi_dim_vector<Us const, 1>... a)
 	{
 		for (auto i : grid_stride_range::x(size_t(0), get_max_dim< 0 >(c)))
@@ -651,6 +671,7 @@ namespace aks
 		if (operator_detail::test_equal(operator_detail::is_same_shape_wrapper(), mc, ma...)) {
 			std::tuple<dim3, dim3> dims = calcDims(tile);
 			naryOpKernelWithIndexTiled << <std::get<0>(dims), std::get<1>(dims) >> > (mc, tile, start, f, ma...);
+			//naryOpKernelWithIndexTiled << <1, 1 >> > (mc, tile, start, f, ma...);
 			//naryOpKernelWithIndex << <1, 1 >> > (mc, f, ma...);
 		}
 		gpu_error_check(last_status());
