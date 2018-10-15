@@ -45,7 +45,10 @@ namespace aks
 			auto const begin = N - (sizeof...(ts) + 1) + 1; //use the next one.
 			auto const mult = multiply(&max_dims[begin], &max_dims[N]);
 			auto const add = index<N>(max_dims, ts...);
-			//assert(idx < max_dims[begin - 1]);
+			if (idx < max_dims[begin - 1]) {
+				void* brkpnt = nullptr;
+				//printf("idx(%s) >= range(%s)\n", idx, max_dims[begin - 1]);
+			}
 			auto const ret = idx * mult + add;
 			//std::cout << idx << " * " << mult << " + " << add << " (" << begin << "," << sizeof...(ts) << ") = " << ret << std::endl;
 			return ret;
@@ -64,7 +67,10 @@ namespace aks
 			auto const add = index_with_products<N>(max_dims, ts...);
 			auto const begin = N - (sizeof...(ts) + 1) + 1; //use the next one.
 			auto const mult = max_dims[begin];
-			//assert(idx < max_dims[begin - 1]);
+			if (idx < max_dims[begin - 1]) {
+				void* brkpnt = nullptr;
+				//printf("idx(%s) >= range(%s)\n", idx, max_dims[begin - 1]);
+			}
 			auto const ret = idx * mult + add;
 			//std::cout << idx << " * " << mult << " + " << add << " (" << begin << "," << sizeof...(ts) << ") = " << ret << std::endl;
 			return ret;

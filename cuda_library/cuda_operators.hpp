@@ -112,14 +112,14 @@ namespace aks
 	}
 
 	template<typename Func, typename V, typename... Us>
-	__global__ void naryOpKernelWithIndex(multi_dim_vector<V, 1> c, Func f, multi_dim_vector<Us const, 1>... a)
+	__global__ void naryOpKernelWithIndex(multi_dim_vector<V, 1> c, Func f, multi_dim_vector<Us, 1>... a)
 	{
 		for (auto i : grid_stride_range::x(size_t(0), get_max_dim< 0 >(c)))
 			c(i) = f(i, a(i)...);
 	}
 
 	template<typename Func, typename V, typename... Us>
-	__global__ void naryOpKernelWithIndex(multi_dim_vector<V, 2> c, Func f, multi_dim_vector<Us const, 2>... a)
+	__global__ void naryOpKernelWithIndex(multi_dim_vector<V, 2> c, Func f, multi_dim_vector<Us, 2>... a)
 	{
 		for (auto i : grid_stride_range::x(size_t(0), get_max_dim< 0 >(c)))
 			for (auto j : grid_stride_range::y(size_t(0), get_max_dim< 1 >(c)))
@@ -127,7 +127,7 @@ namespace aks
 	}
 
 	template<typename Func, typename V, typename... Us>
-	__global__ void naryOpKernelWithIndex(multi_dim_vector<V, 3> c, Func f, multi_dim_vector<Us const, 3>... a)
+	__global__ void naryOpKernelWithIndex(multi_dim_vector<V, 3> c, Func f, multi_dim_vector<Us, 3>... a)
 	{
 		for (auto i : grid_stride_range::x(size_t(0), get_max_dim< 0 >(c)))
 			for (auto j : grid_stride_range::y(size_t(0), get_max_dim< 1 >(c)))
@@ -136,7 +136,7 @@ namespace aks
 	}
 
 	template<typename Func, typename V, typename... Us>
-	__global__ void naryOpKernelWithIndex(multi_dim_vector<V, 4> c, Func f, multi_dim_vector<Us const, 4>... a)
+	__global__ void naryOpKernelWithIndex(multi_dim_vector<V, 4> c, Func f, multi_dim_vector<Us, 4>... a)
 	{
 		for (auto i : grid_stride_range::x(size_t(0), get_max_dim< 0 >(c)))
 			for (auto j : grid_stride_range::y(size_t(0), get_max_dim< 1 >(c)))
@@ -146,7 +146,7 @@ namespace aks
 	}
 
 	template<typename Func, typename V, typename... Us>
-	__global__ void naryOpKernelWithIndex(multi_dim_vector<V, 5> c, Func f, multi_dim_vector<Us const, 5>... a)
+	__global__ void naryOpKernelWithIndex(multi_dim_vector<V, 5> c, Func f, multi_dim_vector<Us, 5>... a)
 	{
 		for (auto i : grid_stride_range::x(size_t(0), get_max_dim< 0 >(c)))
 			for (auto j : grid_stride_range::y(size_t(0), get_max_dim< 1 >(c)))
@@ -157,7 +157,7 @@ namespace aks
 	}
 
 	template<typename Func, typename V, typename... Us>
-	__global__ void naryOpKernelWithIndex(multi_dim_vector<V, 6> c, Func f, multi_dim_vector<Us const, 6>... a)
+	__global__ void naryOpKernelWithIndex(multi_dim_vector<V, 6> c, Func f, multi_dim_vector<Us, 6>... a)
 	{
 		for (auto i : grid_stride_range::x(size_t(0), get_max_dim< 0 >(c)))
 			for (auto j : grid_stride_range::y(size_t(0), get_max_dim< 1 >(c)))
@@ -629,17 +629,17 @@ namespace aks
 	template<typename T>
 	std::tuple<dim3, dim3> calcDims(multi_dim_vector<T, 2> const& mc)
 	{
-		return calculateDims(get_max_dim<0>(mc), 1, 1);
+		return calculateDims(get_max_dim<0>(mc), get_max_dim<1>(mc), 1);
 	}
 
 	template<typename T, size_t N>
 	std::tuple<dim3, dim3> calcDims(multi_dim_vector<T, N> const& mc)
 	{
-		return calculateDims(get_max_dim<0>(mc), 1, 1);
+		return calculateDims(get_max_dim<0>(mc), get_max_dim<1>(mc), get_max_dim<2>(mc));
 	}
 
 	template<typename Func, typename V, size_t N, typename... Us>
-	void naryOpWithIndex(multi_dim_vector<V, N> mc, Func f, multi_dim_vector<Us const, N>... ma)
+	void naryOpWithIndex(multi_dim_vector<V, N> mc, Func f, multi_dim_vector<Us, N>... ma)
 	{
 		if (operator_detail::test_equal(operator_detail::is_same_shape_wrapper(), mc, ma...)) {
 			std::tuple<dim3, dim3> dims = calcDims(mc);
